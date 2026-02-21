@@ -8,6 +8,8 @@
 - trying to add variables together and finding solutions for ValueErrors
 ### refreshers -> lorenz.py
 - displaying a lorenz attractor in 3d using python libraries and some math
+- added a more interactive view so you zoom in and out
+- added color gradiens by its position in time
 
 ## Why?
 I will be preparing for the course by doing some objectives to test my ability.
