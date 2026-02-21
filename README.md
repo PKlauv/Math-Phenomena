@@ -3,9 +3,8 @@
 
 ## What does this repo entail?
 ### hello.py
-initial commit to start the repo up, prints "hello, world!"
-### refreshers
-- addTypes.py
+- initial commit to start the repo up, prints "hello, world!"
+### refreshers -> addTypes.py
     trying to add variables together and finding solutions for ValueErrors
 
 ## Why?
@@ -17,5 +16,5 @@ Some basic commands I have controlled now:
 git status
 git add .
 git commit -m "[message here]"
-git [push]
+git push
 ```
