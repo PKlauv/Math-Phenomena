@@ -130,6 +130,13 @@ p:last-child { margin-bottom: 0; }
     padding: 24px 28px;
     margin: 24px 0;
     overflow-x: auto;
+    max-width: 100%;
+}
+/* Prevent MathJax containers from stretching the page */
+.equation-block mjx-container {
+    display: block !important;
+    overflow-x: auto;
+    max-width: 100%;
 }
 .equation-block .mjx-math {
     font-size: 1.15rem;
@@ -238,7 +245,7 @@ footer a:hover { border-bottom-color: var(--accent); }
     .equation-block {
         padding: 16px 12px;
     }
-    .equation-block .mjx-math {
-        font-size: 0.95rem;
+    .equation-block mjx-container {
+        font-size: 0.85rem;
     }
 }
