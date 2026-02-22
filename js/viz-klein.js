@@ -197,6 +197,12 @@ window.VizKlein = (function () {
 
         Plotly.newPlot(plotDiv, [trace], layout, config);
 
+        // Let page scroll through the 3D plot — Plotly's gl-plot3d
+        // orbit controller consumes wheel events even with scrollZoom:false
+        plotDiv.addEventListener('wheel', function (e) {
+            e.stopImmediatePropagation();
+        }, { capture: true, passive: true });
+
         // Grab the WebGL scene reference immediately to avoid relayout fallback
         var s = plotDiv._fullLayout && plotDiv._fullLayout.scene &&
                 plotDiv._fullLayout.scene._scene;

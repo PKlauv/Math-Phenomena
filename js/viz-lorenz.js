@@ -328,6 +328,12 @@ window.VizLorenz = (function () {
 
         Plotly.newPlot(plotDiv, [trace, leadingPoint], layout, config);
 
+        // Let page scroll through the 3D plot — Plotly's gl-plot3d
+        // orbit controller consumes wheel events even with scrollZoom:false
+        plotDiv.addEventListener('wheel', function (e) {
+            e.stopImmediatePropagation();
+        }, { capture: true, passive: true });
+
         phase = 'draw';
         frame = 0;
         drawnPoints = 1;
