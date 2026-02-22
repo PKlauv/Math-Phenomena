@@ -14,6 +14,7 @@
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script>
 <!-- MathJax 3 — renders LaTeX equations -->
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<!-- Supabase JS — feedback form backend -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <link rel="stylesheet" href="css/shared.css">
 <style>
@@ -238,7 +239,7 @@
 </div>
 
 <div class="landing-footer">
-    <p class="credit">Made by Pk Lauvstad</p>
+    <p class="credit">Made by Pk Lauvstad | Built with vanilla HTML, CSS, and JavaScript</p>
     <form class="feedback-form" id="feedback-form">
         <label for="feedback-category">Category</label>
         <select id="feedback-category">
@@ -251,6 +252,7 @@
         <button type="submit">Send feedback</button>
         <div class="feedback-msg" id="feedback-msg"></div>
     </form>
+
 </div>
 
 </div><!-- end panel-home -->
@@ -1160,7 +1162,6 @@
         ctx.putImageData(imgData, 0, 0);
     }
 
-    // Only draw thumbnails when the home panel is visible
     function drawAll() {
         drawLorenz();
         drawMobius();

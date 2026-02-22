@@ -14,7 +14,6 @@
         mandelbrot: function () { return window.VizMandelbrot; }
     };
 
-    // Track which tabs have been initialized
     var initializedTabs = {};
     var currentTab = 'home';
 
@@ -25,12 +24,10 @@
     // --- Fade transition timing ---
     var FADE_DURATION = 300; // ms, matches CSS transition
 
-    // --- Get panel element for a tab ---
     function getPanel(tabName) {
         return document.getElementById('panel-' + tabName);
     }
 
-    // --- Update nav link active states ---
     function updateNavActive(tabName) {
         for (var i = 0; i < navLinks.length; i++) {
             var link = navLinks[i];
@@ -62,7 +59,6 @@
         }
     }
 
-    // --- Pause the current viz ---
     function pauseTab(tabName) {
         var getModule = vizModules[tabName];
         if (getModule) {
@@ -80,7 +76,6 @@
         }
     }
 
-    // --- Switch to a tab ---
     function switchTab(tabName, skipHistory) {
         if (tabName === currentTab) return;
 
@@ -88,34 +83,26 @@
         var newPanel = getPanel(tabName);
         if (!newPanel) return;
 
-        // Pause old viz
         pauseTab(currentTab);
 
-        // Fade out old panel
         if (oldPanel) {
             oldPanel.classList.remove('visible');
         }
 
         // After fade-out, swap panels
         setTimeout(function () {
-            // Hide old panel
             if (oldPanel) {
                 oldPanel.classList.remove('active');
             }
 
-            // Show new panel
             newPanel.classList.add('active');
 
             // Force reflow before adding visible class for transition
             newPanel.offsetHeight; // eslint-disable-line no-unused-expressions
 
-            // Fade in new panel
             newPanel.classList.add('visible');
-
-            // Update nav
             updateNavActive(tabName);
 
-            // Update current tab
             var prevTab = currentTab;
             currentTab = tabName;
 
@@ -124,7 +111,6 @@
                 history.pushState(null, '', '#' + tabName);
             }
 
-            // Scroll to top
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
             // Init or resume the new viz
@@ -160,7 +146,6 @@
     function onLoad() {
         var hash = location.hash.replace('#', '') || 'home';
 
-        // Validate hash
         var validTabs = ['home', 'lorenz', 'mobius', 'klein', 'sierpinski', 'mandelbrot'];
         if (validTabs.indexOf(hash) === -1) hash = 'home';
 

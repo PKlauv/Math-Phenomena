@@ -328,13 +328,11 @@ window.VizLorenz = (function () {
 
         Plotly.newPlot(plotDiv, [trace, leadingPoint], layout, config);
 
-        // Init animation state
         phase = 'draw';
         frame = 0;
         drawnPoints = 1;
         orbitAngle = 0;
 
-        // Event listeners
         plotDiv.addEventListener('mousedown', interactionPause);
         plotDiv.addEventListener('touchstart', interactionPause);
 

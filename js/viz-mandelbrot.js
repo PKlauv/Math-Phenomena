@@ -269,7 +269,6 @@ window.VizMandelbrot = (function () {
     function resume() {
         if (!initialized) return init();
         active = true;
-        // Re-render current view
         startRender();
     }
 

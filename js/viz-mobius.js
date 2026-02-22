@@ -48,7 +48,6 @@ window.VizMobius = (function () {
     var hudFrameCount = 0;
     var HUD_UPDATE_INTERVAL = 6;
 
-    // Captions
     var captions = [
         { at: 0.00, text: 'Building the strip from the first cross-section...' },
         { at: 0.20, text: 'The surface curves through 3D space as u sweeps around' },
