@@ -129,6 +129,7 @@ p:last-child { margin-bottom: 0; }
     border-left: 3px solid var(--accent);
     padding: 24px 28px;
     margin: 24px 0;
+    overflow-x: auto;
 }
 .equation-block .mjx-math {
     font-size: 1.15rem;
@@ -232,5 +233,12 @@ footer a:hover { border-bottom-color: var(--accent); }
         gap: 14px;
         flex-wrap: wrap;
         justify-content: center;
+    }
+
+    .equation-block {
+        padding: 16px 12px;
+    }
+    .equation-block .mjx-math {
+        font-size: 0.95rem;
     }
 }
