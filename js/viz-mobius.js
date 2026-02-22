@@ -1,6 +1,6 @@
 // ==========================================================================
 // Mobius Strip — extracted module for SPA tab integration
-// Exposes: window.VizMobius = { init(), pause(), resume() }
+// Exposes: window.VizMobius = { init(), pause(), resume(), togglePause(), reset(), skip(), adjustSlider() }
 // All DOM IDs are prefixed with "mobius-"
 // ==========================================================================
 
@@ -44,9 +44,7 @@ window.VizMobius = (function () {
     var manualPause = false;
     var resumeTimer = null;
     var pauseStart = 0;
-    var RESUME_DELAY = 5000;
     var hudFrameCount = 0;
-    var HUD_UPDATE_INTERVAL = 6;
 
     var captions = [
         { at: 0.00, text: 'Building the strip from the first cross-section...' },
@@ -84,13 +82,7 @@ window.VizMobius = (function () {
         for (var i = captions.length - 1; i >= 0; i--) {
             if (progress >= captions[i].at) { text = captions[i].text; break; }
         }
-        if (captionDiv.textContent !== text) {
-            captionDiv.style.opacity = '0';
-            setTimeout(function () {
-                captionDiv.textContent = text;
-                captionDiv.style.opacity = '1';
-            }, 300);
-        }
+        VizShared.fadeCaption(captionDiv, text);
     }
 
     function updateHUD() {
@@ -101,7 +93,7 @@ window.VizMobius = (function () {
                 if (hudDetail.textContent !== 'Paused') hudDetail.textContent = 'Paused';
             } else {
                 var elapsed = Date.now() - pauseStart;
-                var remaining = Math.max(0, Math.ceil((RESUME_DELAY - elapsed) / 1000));
+                var remaining = Math.max(0, Math.ceil((VizShared.RESUME_DELAY - elapsed) / 1000));
                 hudDetail.textContent = 'Resuming in ' + remaining + 's\u2026';
             }
             return;
@@ -144,20 +136,12 @@ window.VizMobius = (function () {
 
     function transitionToOrbit() {
         phase = 'orbit'; frame = 0;
-        captionDiv.style.opacity = '0';
-        setTimeout(function () {
-            captionDiv.textContent = 'Drag to look around, or adjust sliders to explore';
-            captionDiv.style.opacity = '1';
-        }, 300);
+        VizShared.fadeCaption(captionDiv, 'Drag to look around, or adjust sliders to explore');
     }
 
     function transitionToDone() {
         phase = 'done'; frame = ORBIT_FRAMES;
-        captionDiv.style.opacity = '0';
-        setTimeout(function () {
-            captionDiv.textContent = 'Adjust sliders to explore, or press reset to replay';
-            captionDiv.style.opacity = '1';
-        }, 300);
+        VizShared.fadeCaption(captionDiv, 'Adjust sliders to explore, or press reset to replay');
     }
 
     function resetToStart() {
@@ -165,6 +149,7 @@ window.VizMobius = (function () {
         paused = false; manualPause = false;
         clearTimeout(resumeTimer);
         btnPause.textContent = '\u23F8';
+        btnPause.setAttribute('aria-label', 'Pause animation');
 
         var initial = computeSurface(nTwists, halfWidth, 0.01);
         Plotly.restyle(plotDiv, { x: [initial.x], y: [initial.y], z: [initial.z] }, 0);
@@ -175,7 +160,7 @@ window.VizMobius = (function () {
         if (!active) return;
 
         hudFrameCount++;
-        if (hudFrameCount >= HUD_UPDATE_INTERVAL) {
+        if (hudFrameCount >= VizShared.HUD_UPDATE_INTERVAL) {
             hudFrameCount = 0;
             updateHUD();
         }
@@ -217,10 +202,15 @@ window.VizMobius = (function () {
         paused = true; manualPause = false;
         pauseStart = Date.now();
         btnPause.textContent = '\u25B6';
+        btnPause.setAttribute('aria-label', 'Resume animation');
         clearTimeout(resumeTimer);
         resumeTimer = setTimeout(function () {
-            if (!manualPause) { paused = false; btnPause.textContent = '\u23F8'; }
-        }, RESUME_DELAY);
+            if (!manualPause) {
+                paused = false;
+                btnPause.textContent = '\u23F8';
+                btnPause.setAttribute('aria-label', 'Pause animation');
+            }
+        }, VizShared.RESUME_DELAY);
     }
 
     function onSliderChange() {
@@ -228,6 +218,8 @@ window.VizMobius = (function () {
         halfWidth = parseFloat(widthSlider.value);
         twistVal.textContent = nTwists;
         widthVal.textContent = halfWidth.toFixed(2);
+        twistSlider.setAttribute('aria-valuenow', nTwists);
+        widthSlider.setAttribute('aria-valuenow', halfWidth);
 
         var full = computeSurface(nTwists, halfWidth, TWO_PI);
         Plotly.restyle(plotDiv, { x: [full.x], y: [full.y], z: [full.z] }, 0);
@@ -236,13 +228,10 @@ window.VizMobius = (function () {
         paused = false; manualPause = false;
         clearTimeout(resumeTimer);
         btnPause.textContent = '\u23F8';
+        btnPause.setAttribute('aria-label', 'Pause animation');
 
-        captionDiv.style.opacity = '0';
-        setTimeout(function () {
-            var label = nTwists === 1 ? 'half-twist' : 'half-twists';
-            captionDiv.textContent = nTwists + ' ' + label + ', width ' + halfWidth.toFixed(2) + '. Drag to explore';
-            captionDiv.style.opacity = '1';
-        }, 300);
+        var label = nTwists === 1 ? 'half-twist' : 'half-twists';
+        VizShared.fadeCaption(captionDiv, nTwists + ' ' + label + ', width ' + halfWidth.toFixed(2) + '. Drag to explore');
         updateHUD();
     }
 
@@ -252,6 +241,11 @@ window.VizMobius = (function () {
         if (initialized) return;
         initialized = true;
         active = true;
+
+        if (typeof Plotly === 'undefined') {
+            console.warn('VizMobius: Plotly not loaded');
+            return;
+        }
 
         plotDiv     = document.getElementById('mobius-plot');
         captionDiv  = document.getElementById('mobius-caption');
@@ -278,34 +272,12 @@ window.VizMobius = (function () {
             lightposition: { x: 100, y: 200, z: 300 }
         };
 
-        var axStyle = {
-            title: '', showticklabels: false,
-            showgrid: true, gridcolor: '#1a1a1a',
-            zerolinecolor: '#222', backgroundcolor: '#101010',
-            showspikes: false
-        };
+        var layout = VizShared.plotlyBaseLayout({
+            camera: { eye: { x: 0.8, y: 0.8, z: 2.2 } }
+        });
 
-        var layout = {
-            paper_bgcolor: '#101010', plot_bgcolor: '#101010',
-            scene: {
-                bgcolor: '#101010',
-                xaxis: axStyle, yaxis: axStyle, zaxis: axStyle,
-                camera: { eye: { x: 0.8, y: 0.8, z: 2.2 } },
-                dragmode: 'orbit'
-            },
-            margin: { l: 0, r: 0, t: 0, b: 0 },
-            showlegend: false
-        };
-
-        var config = { responsive: true, displayModeBar: false, scrollZoom: false };
-
-        Plotly.newPlot(plotDiv, [trace], layout, config);
-
-        // Let page scroll through the 3D plot — Plotly's gl-plot3d
-        // orbit controller consumes wheel events even with scrollZoom:false
-        plotDiv.addEventListener('wheel', function (e) {
-            e.stopImmediatePropagation();
-        }, { capture: true, passive: true });
+        Plotly.newPlot(plotDiv, [trace], layout, VizShared.PLOTLY_CONFIG);
+        VizShared.fixPlotlyScroll(plotDiv);
 
         phase = 'draw'; frame = 0; orbitAngle = 0;
 
@@ -313,29 +285,11 @@ window.VizMobius = (function () {
         plotDiv.addEventListener('touchstart', interactionPause);
 
         btnPause.addEventListener('click', function () {
-            if (phase === 'done') return;
-            if (paused) {
-                paused = false; manualPause = false;
-                clearTimeout(resumeTimer); btnPause.textContent = '\u23F8';
-            } else {
-                paused = true; manualPause = true;
-                clearTimeout(resumeTimer); btnPause.textContent = '\u25B6';
-            }
+            togglePause();
         });
 
         btnSkip.addEventListener('click', function () {
-            if (phase === 'done') return;
-            if (paused) {
-                paused = false; manualPause = false;
-                clearTimeout(resumeTimer); btnPause.textContent = '\u23F8';
-            }
-            if (phase === 'draw') {
-                var full = computeSurface(nTwists, halfWidth, TWO_PI);
-                Plotly.restyle(plotDiv, { x: [full.x], y: [full.y], z: [full.z] }, 0);
-                transitionToOrbit();
-            } else if (phase === 'orbit') {
-                transitionToDone();
-            }
+            skip();
         });
 
         btnReset.addEventListener('click', function () { resetToStart(); });
@@ -343,7 +297,56 @@ window.VizMobius = (function () {
         twistSlider.addEventListener('input', onSliderChange);
         widthSlider.addEventListener('input', onSliderChange);
 
+        // Theme change listener
+        document.addEventListener('themechange', function () {
+            if (initialized && plotDiv) {
+                VizShared.relayoutPlotlyTheme(plotDiv);
+            }
+        });
+
         requestAnimationFrame(tick);
+    }
+
+    function togglePause() {
+        if (phase === 'done') return;
+        if (paused) {
+            paused = false; manualPause = false;
+            clearTimeout(resumeTimer);
+            btnPause.textContent = '\u23F8';
+            btnPause.setAttribute('aria-label', 'Pause animation');
+            VizShared.announce('Resumed');
+        } else {
+            paused = true; manualPause = true;
+            clearTimeout(resumeTimer);
+            btnPause.textContent = '\u25B6';
+            btnPause.setAttribute('aria-label', 'Resume animation');
+            VizShared.announce('Paused');
+        }
+    }
+
+    function skip() {
+        if (phase === 'done') return;
+        if (paused) {
+            paused = false; manualPause = false;
+            clearTimeout(resumeTimer);
+            btnPause.textContent = '\u23F8';
+            btnPause.setAttribute('aria-label', 'Pause animation');
+        }
+        if (phase === 'draw') {
+            var full = computeSurface(nTwists, halfWidth, TWO_PI);
+            Plotly.restyle(plotDiv, { x: [full.x], y: [full.y], z: [full.z] }, 0);
+            transitionToOrbit();
+        } else if (phase === 'orbit') {
+            transitionToDone();
+        }
+    }
+
+    function adjustSlider(direction) {
+        // Adjust the twist slider as the primary slider
+        var newVal = parseInt(twistSlider.value, 10) + direction;
+        newVal = Math.max(parseInt(twistSlider.min), Math.min(parseInt(twistSlider.max), newVal));
+        twistSlider.value = newVal;
+        onSliderChange();
     }
 
     function pause() {
@@ -360,5 +363,13 @@ window.VizMobius = (function () {
         });
     }
 
-    return { init: init, pause: pause, resume: resume };
+    return {
+        init: init,
+        pause: pause,
+        resume: resume,
+        togglePause: togglePause,
+        reset: resetToStart,
+        skip: skip,
+        adjustSlider: adjustSlider
+    };
 })();

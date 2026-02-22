@@ -1,6 +1,6 @@
 // ==========================================================================
 // Sierpinski Triangle — extracted module for SPA tab integration
-// Exposes: window.VizSierpinski = { init(), pause(), resume() }
+// Exposes: window.VizSierpinski = { init(), pause(), resume(), togglePause(), reset(), skip(), adjustSlider() }
 // All DOM IDs are prefixed with "sierpinski-"
 // ==========================================================================
 
@@ -20,7 +20,7 @@ window.VizSierpinski = (function () {
     var CSS_H = 700;
     var dpr = 1;
 
-    // Colors
+    // Colors — read from CSS variables
     var BG_COLOR     = '#101010';
     var ACCENT_COLOR = '#c8a26a';
 
@@ -49,6 +49,12 @@ window.VizSierpinski = (function () {
 
     // Precomputed triangles
     var removedByLevel = [];
+
+    function readThemeColors() {
+        var style = getComputedStyle(document.documentElement);
+        BG_COLOR = style.getPropertyValue('--bg').trim() || '#101010';
+        ACCENT_COLOR = style.getPropertyValue('--accent').trim() || '#c8a26a';
+    }
 
     function computeVertices() {
         triW = CSS_W - 2 * PADDING;
@@ -130,13 +136,7 @@ window.VizSierpinski = (function () {
     }
 
     function setCaption(text) {
-        if (captionDiv.textContent !== text) {
-            captionDiv.style.opacity = '0';
-            setTimeout(function () {
-                captionDiv.textContent = text;
-                captionDiv.style.opacity = '1';
-            }, 300);
-        }
+        VizShared.fadeCaption(captionDiv, text);
     }
 
     function updateHUD() {
@@ -215,6 +215,7 @@ window.VizSierpinski = (function () {
         method = 'recursive';
         currentDepth = 0; frameCount = 0; animDone = false;
         paused = false; btnPause.textContent = '\u23F8';
+        btnPause.setAttribute('aria-label', 'Pause animation');
 
         precompute(); clearCanvas(); drawBaseTriangle();
         setCaption(getRecursiveCaption(0)); updateHUD();
@@ -284,6 +285,7 @@ window.VizSierpinski = (function () {
     function startChaos() {
         method = 'chaos';
         animDone = false; paused = false; btnPause.textContent = '\u23F8';
+        btnPause.setAttribute('aria-label', 'Pause animation');
 
         initChaos(); setupChaosBuffer(); clearCanvas();
         setCaption('Starting the chaos game...'); updateHUD();
@@ -294,7 +296,11 @@ window.VizSierpinski = (function () {
 
     function skipToEnd() {
         if (animDone) return;
-        if (paused) { paused = false; btnPause.textContent = '\u23F8'; }
+        if (paused) {
+            paused = false;
+            btnPause.textContent = '\u23F8';
+            btnPause.setAttribute('aria-label', 'Pause animation');
+        }
 
         if (method === 'recursive') {
             currentDepth = targetDepth; animDone = true;
@@ -322,6 +328,7 @@ window.VizSierpinski = (function () {
 
     function resetAnimation() {
         if (animId) cancelAnimationFrame(animId);
+        readThemeColors();
         if (method === 'recursive') { startRecursive(); } else { startChaos(); }
     }
 
@@ -334,6 +341,10 @@ window.VizSierpinski = (function () {
 
         canvas       = document.getElementById('sierpinski-canvas');
         ctx          = canvas.getContext('2d');
+        if (!ctx) {
+            console.warn('VizSierpinski: canvas context unavailable');
+            return;
+        }
         captionDiv   = document.getElementById('sierpinski-caption');
         hudPhase     = document.getElementById('sierpinski-hud-phase');
         hudFill      = document.getElementById('sierpinski-hud-progress-fill');
@@ -345,14 +356,12 @@ window.VizSierpinski = (function () {
         depthVal     = document.getElementById('sierpinski-depth-val');
         methodSelect = document.getElementById('sierpinski-method-select');
 
+        readThemeColors();
         computeVertices();
         setupCanvas();
 
         btnPause.addEventListener('click', function () {
-            if (animDone) return;
-            if (paused) { paused = false; btnPause.textContent = '\u23F8'; }
-            else { paused = true; btnPause.textContent = '\u25B6'; }
-            updateHUD();
+            togglePause();
         });
 
         btnSkip.addEventListener('click', function () { skipToEnd(); });
@@ -361,6 +370,7 @@ window.VizSierpinski = (function () {
         depthSlider.addEventListener('input', function () {
             targetDepth = parseInt(this.value, 10);
             depthVal.textContent = targetDepth;
+            depthSlider.setAttribute('aria-valuenow', targetDepth);
             if (method === 'recursive') {
                 if (animId) cancelAnimationFrame(animId);
                 startRecursive();
@@ -390,7 +400,54 @@ window.VizSierpinski = (function () {
             }, 200);
         });
 
+        // Theme change: re-read colors and redraw
+        document.addEventListener('themechange', function () {
+            if (!initialized) return;
+            readThemeColors();
+            if (method === 'recursive') {
+                clearCanvas(); drawBaseTriangle(); drawRemovedUpTo(currentDepth);
+            } else {
+                // For chaos, we need to redraw from the buffer with new BG
+                if (chaosBuffer) {
+                    clearCanvas();
+                    // Redraw chaos buffer onto main canvas
+                    ctx.setTransform(1, 0, 0, 1, 0, 0);
+                    ctx.drawImage(chaosBuffer, 0, 0);
+                    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                }
+            }
+        });
+
         startRecursive();
+    }
+
+    function togglePause() {
+        if (animDone) return;
+        if (paused) {
+            paused = false;
+            btnPause.textContent = '\u23F8';
+            btnPause.setAttribute('aria-label', 'Pause animation');
+            VizShared.announce('Resumed');
+        } else {
+            paused = true;
+            btnPause.textContent = '\u25B6';
+            btnPause.setAttribute('aria-label', 'Resume animation');
+            VizShared.announce('Paused');
+        }
+        updateHUD();
+    }
+
+    function adjustSlider(direction) {
+        var newVal = parseInt(depthSlider.value, 10) + direction;
+        newVal = Math.max(parseInt(depthSlider.min), Math.min(parseInt(depthSlider.max), newVal));
+        depthSlider.value = newVal;
+        targetDepth = newVal;
+        depthVal.textContent = targetDepth;
+        depthSlider.setAttribute('aria-valuenow', targetDepth);
+        if (method === 'recursive') {
+            if (animId) cancelAnimationFrame(animId);
+            startRecursive();
+        }
     }
 
     function pause() {
@@ -401,7 +458,6 @@ window.VizSierpinski = (function () {
     function resume() {
         if (!initialized) return init();
         active = true;
-        // Restart the animation loop from current state
         if (animId) cancelAnimationFrame(animId);
         if (method === 'recursive') {
             animId = requestAnimationFrame(tickRecursive);
@@ -410,5 +466,13 @@ window.VizSierpinski = (function () {
         }
     }
 
-    return { init: init, pause: pause, resume: resume };
+    return {
+        init: init,
+        pause: pause,
+        resume: resume,
+        togglePause: togglePause,
+        reset: resetAnimation,
+        skip: skipToEnd,
+        adjustSlider: adjustSlider
+    };
 })();

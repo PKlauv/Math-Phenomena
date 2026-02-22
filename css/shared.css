@@ -1,21 +1,45 @@
 /* ===================================================================
-   Shared styles — dark theme palette, typography, layout primitives.
+   Shared styles — theme system, typography, layout primitives.
    Every visualization page links to this file.
    =================================================================== */
 
-/* Custom properties — dark theme palette and font stack choices.
-   Serif body font gives a textbook feel; UI sans-serif for labels;
-   monospace for parameter values. */
-:root {
+/* Custom properties — dark theme (default) */
+:root, [data-theme="dark"] {
     --bg: #101010;
     --bg-surface: #181818;
     --border: #282828;
     --text: #d4d4d4;
     --text-dim: #888;
+    --text-heading: #eee;
+    --text-faint: #666;
     --accent: #c8a26a;
+    --hud-bg: rgba(16, 16, 16, 0.75);
+    --hud-border: rgba(255, 255, 255, 0.06);
+    --subtle-bg: rgba(255, 255, 255, 0.08);
+    --plotly-bg: #101010;
+    --plotly-grid: #1a1a1a;
+    --plotly-zeroline: #222;
     --font-body: 'Cambria', 'Georgia', 'Times New Roman', serif;
     --font-ui: 'Segoe UI', system-ui, sans-serif;
     --font-mono: 'Cascadia Code', 'Consolas', monospace;
+}
+
+/* Light theme */
+[data-theme="light"] {
+    --bg: #f5f3ef;
+    --bg-surface: #ffffff;
+    --border: #ddd;
+    --text: #333;
+    --text-dim: #777;
+    --text-heading: #222;
+    --text-faint: #999;
+    --accent: #9a7b4f;
+    --hud-bg: rgba(255, 255, 255, 0.85);
+    --hud-border: rgba(0, 0, 0, 0.08);
+    --subtle-bg: rgba(0, 0, 0, 0.06);
+    --plotly-bg: #f5f3ef;
+    --plotly-grid: #e0ddd8;
+    --plotly-zeroline: #ccc;
 }
 
 /* Global reset — consistent box model and smooth anchor scrolling */
@@ -30,6 +54,34 @@ body {
     font-size: 1.05rem;
     line-height: 1.8;
     overflow-x: hidden;
+}
+
+/* =================================================================
+   Accessibility utilities
+   ================================================================= */
+
+/* Screen-reader only content */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Focus indicators — visible only on keyboard navigation */
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Remove default outline for mouse users, keep for keyboard */
+:focus:not(:focus-visible) {
+    outline: none;
 }
 
 /* Site navigation bar */
@@ -54,15 +106,39 @@ body {
     gap: 20px;
     font-family: var(--font-ui);
     font-size: 0.82rem;
+    align-items: center;
 }
 .nav-links a {
     color: var(--text-dim);
     text-decoration: none;
     transition: color 0.15s;
+    padding: 2px 0;
 }
 .nav-links a:hover,
-.nav-links a.active {
+.nav-links a.active,
+.nav-links a[aria-selected="true"] {
     color: var(--accent);
+}
+
+/* Theme toggle button */
+.theme-toggle {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 1rem;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s, border-color 0.15s;
+    flex-shrink: 0;
+}
+.theme-toggle:hover {
+    color: var(--accent);
+    border-color: var(--accent);
 }
 
 /* Centered content column, max 760px for comfortable reading width */
@@ -83,7 +159,7 @@ header h1 {
     font-size: 2.4rem;
     font-weight: 400;
     letter-spacing: 0.5px;
-    color: #eee;
+    color: var(--text-heading);
     margin-bottom: 8px;
 }
 header .tagline {
@@ -113,7 +189,7 @@ h2 {
     font-family: var(--font-body);
     font-size: 1.6rem;
     font-weight: 400;
-    color: #eee;
+    color: var(--text-heading);
     margin-bottom: 20px;
 }
 p {
@@ -183,7 +259,7 @@ p:last-child { margin-bottom: 0; }
 }
 .param-table .value {
     font-family: var(--font-mono);
-    color: #eee;
+    color: var(--text-heading);
     width: 60px;
 }
 
@@ -199,7 +275,7 @@ p:last-child { margin-bottom: 0; }
 .app-list li:last-child { border-bottom: none; }
 .app-list .app-title {
     font-weight: 700;
-    color: #eee;
+    color: var(--text-heading);
 }
 
 /* Footnote — small italic text for supplementary notes */
@@ -274,7 +350,7 @@ footer a:hover { border-bottom-color: var(--accent); }
     height: 560px;
     display: block;
     margin: 0 auto;
-    background: #101010;
+    background: var(--bg);
 }
 .viz-canvas.crosshair {
     cursor: crosshair;
@@ -285,7 +361,7 @@ footer a:hover { border-bottom-color: var(--accent); }
     position: absolute;
     bottom: 52px;
     left: 24px;
-    background: rgba(16, 16, 16, 0.75);
+    background: var(--hud-bg);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border-radius: 6px;
@@ -293,7 +369,7 @@ footer a:hover { border-bottom-color: var(--accent); }
     min-width: 150px;
     z-index: 10;
     pointer-events: none;
-    border: 1px solid rgba(255,255,255,0.06);
+    border: 1px solid var(--hud-border);
 }
 .viz-hud-phase {
     font-family: var(--font-ui);
@@ -311,7 +387,7 @@ footer a:hover { border-bottom-color: var(--accent); }
 .viz-hud-progress {
     width: 100%;
     height: 3px;
-    background: rgba(255,255,255,0.08);
+    background: var(--subtle-bg);
     border-radius: 2px;
     overflow: hidden;
     margin-bottom: 6px;
@@ -343,14 +419,14 @@ footer a:hover { border-bottom-color: var(--accent); }
     position: absolute;
     bottom: 52px;
     right: 24px;
-    background: rgba(16, 16, 16, 0.75);
+    background: var(--hud-bg);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border-radius: 6px;
     padding: 6px 8px;
     z-index: 10;
     pointer-events: auto;
-    border: 1px solid rgba(255,255,255,0.06);
+    border: 1px solid var(--hud-border);
     display: flex;
     gap: 4px;
 }
@@ -367,8 +443,8 @@ footer a:hover { border-bottom-color: var(--accent); }
     line-height: 1;
 }
 .viz-controls button:hover {
-    background: rgba(255,255,255,0.08);
-    color: #eee;
+    background: var(--subtle-bg);
+    color: var(--text-heading);
 }
 
 /* Educational caption below visualization */
@@ -415,9 +491,12 @@ footer a:hover { border-bottom-color: var(--accent); }
     accent-color: var(--accent);
     -webkit-appearance: none;
     appearance: none;
-    background: rgba(255,255,255,0.08);
+    background: var(--subtle-bg);
     border-radius: 3px;
-    outline: none;
+}
+.slider-group input[type="range"]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
 }
 /* Custom thumb for iOS and cross-browser consistency */
 .slider-group input[type="range"]::-webkit-slider-thumb {
@@ -450,14 +529,83 @@ footer a:hover { border-bottom-color: var(--accent); }
     font-size: 0.8rem;
     cursor: pointer;
 }
-.viz-select:focus {
-    outline: 1px solid var(--accent);
+.viz-select:focus-visible {
+    outline: 2px solid var(--accent);
     outline-offset: 1px;
 }
 
 /* Position variant for canvas-only panels (Sierpinski — no flow content in wrapper) */
 .viz-hud.hud-low { bottom: 12px; }
 .viz-controls.controls-low { bottom: 12px; }
+
+/* =================================================================
+   Keyboard shortcuts help overlay
+   ================================================================= */
+.keyboard-help {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.6);
+    align-items: center;
+    justify-content: center;
+}
+.keyboard-help.visible {
+    display: flex;
+}
+.keyboard-help-panel {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 32px;
+    max-width: 420px;
+    width: 90%;
+    position: relative;
+}
+.keyboard-help-panel h2 {
+    font-family: var(--font-ui);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-heading);
+    margin-bottom: 16px;
+}
+.keyboard-help-panel .close-btn {
+    position: absolute;
+    top: 12px; right: 16px;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 4px;
+}
+.keyboard-help-panel .close-btn:hover {
+    color: var(--text-heading);
+}
+.shortcut-list {
+    list-style: none;
+    font-family: var(--font-ui);
+    font-size: 0.85rem;
+}
+.shortcut-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+}
+.shortcut-list li:last-child { border-bottom: none; }
+.shortcut-list kbd {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    background: var(--subtle-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: var(--accent);
+    min-width: 28px;
+    text-align: center;
+}
 
 /* Responsive — tighter spacing on narrow screens */
 @media (max-width: 600px) {

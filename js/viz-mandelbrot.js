@@ -1,6 +1,6 @@
 // ==========================================================================
 // Mandelbrot Set — extracted module for SPA tab integration
-// Exposes: window.VizMandelbrot = { init(), pause(), resume() }
+// Exposes: window.VizMandelbrot = { init(), pause(), resume(), reset(), adjustSlider() }
 // All DOM IDs are prefixed with "mandelbrot-"
 // ==========================================================================
 
@@ -30,39 +30,12 @@ window.VizMandelbrot = (function () {
     var DEFAULT_CY = 0.0;
     var DEFAULT_ZOOM = 200;
 
-    // Color palettes
-    function infernoColor(t) {
-        var r, g, b;
-        if (t < 0.25) {
-            var s = t / 0.25;
-            r = Math.floor(10 + 68 * s); g = Math.floor(7 + 5 * s); b = Math.floor(46 + 72 * s);
-        } else if (t < 0.5) {
-            var s = (t - 0.25) / 0.25;
-            r = Math.floor(78 + 90 * s); g = Math.floor(12 + 46 * s); b = Math.floor(118 - 35 * s);
-        } else if (t < 0.75) {
-            var s = (t - 0.5) / 0.25;
-            r = Math.floor(168 + 58 * s); g = Math.floor(58 + 74 * s); b = Math.floor(83 - 69 * s);
-        } else {
-            var s = (t - 0.75) / 0.25;
-            r = Math.floor(226 + 26 * s); g = Math.floor(132 + 122 * s); b = Math.floor(14 + 238 * s);
-        }
-        return [r, g, b];
-    }
+    // Named constants
+    var MIN_ZOOM = 50;
+    var ZOOM_FACTOR = 2;
 
-    function goldColor(t) {
-        return [Math.floor(30 + 170 * t), Math.floor(10 + 152 * t), Math.floor(5 + 101 * t)];
-    }
-    function oceanColor(t) {
-        return [Math.floor(5 + 40 * t), Math.floor(20 + 130 * t), Math.floor(60 + 195 * t)];
-    }
-    function grayscaleColor(t) {
-        var v = Math.floor(255 * t); return [v, v, v];
-    }
-
-    var palettes = {
-        inferno: infernoColor, gold: goldColor,
-        ocean: oceanColor, grayscale: grayscaleColor
-    };
+    // Use shared palettes from MandelbrotPalettes
+    var palettes;
     var currentPalette = 'inferno';
 
     // Hoisted constant
@@ -79,6 +52,15 @@ window.VizMandelbrot = (function () {
         worker = new Worker('js/mandelbrot-worker.js');
     } catch (e) {
         worker = null;
+    }
+
+    // Worker error fallback
+    if (worker) {
+        worker.onerror = function (e) {
+            console.warn('Mandelbrot worker error, falling back to main thread:', e.message);
+            worker = null;
+            if (rendering) startRender();
+        };
     }
 
     function startRender() {
@@ -125,6 +107,8 @@ window.VizMandelbrot = (function () {
         var invDpr = 1 / dpr;
         var halfW = W / 2, halfH = H / 2;
         var invZoom = 1 / zoom;
+        var ESC = MandelbrotPalettes.ESCAPE_RADIUS_SQ;
+        var CYCLE = MandelbrotPalettes.COLOR_CYCLE_FACTOR;
 
         for (var py = renderRow; py < endRow; py++) {
             var y0base = centerY + (py * invDpr - halfH) * invZoom;
@@ -133,7 +117,7 @@ window.VizMandelbrot = (function () {
                 var y0 = y0base;
                 var x = 0, y = 0, iter = 0, xx = 0, yy = 0;
 
-                while (xx + yy <= 4 && iter < maxIter) {
+                while (xx + yy <= ESC && iter < maxIter) {
                     y = 2 * x * y + y0;
                     x = xx - yy + x0;
                     xx = x * x; yy = y * y;
@@ -148,7 +132,7 @@ window.VizMandelbrot = (function () {
                     var smoothIter = iter + 1 - nu;
                     var t = smoothIter / maxIter;
                     t = Math.max(0, Math.min(1, t));
-                    t = (t * 8) % 1;
+                    t = (t * CYCLE) % 1;
                     var color = colorFn(t);
                     data[idx] = color[0]; data[idx + 1] = color[1]; data[idx + 2] = color[2];
                 }
@@ -184,8 +168,15 @@ window.VizMandelbrot = (function () {
         initialized = true;
         active = true;
 
+        // Use shared palettes
+        palettes = MandelbrotPalettes.palettes;
+
         canvas      = document.getElementById('mandelbrot-canvas');
         ctx         = canvas.getContext('2d');
+        if (!ctx) {
+            console.warn('VizMandelbrot: canvas context unavailable');
+            return;
+        }
         hudPhase    = document.getElementById('mandelbrot-hud-phase');
         hudFill     = document.getElementById('mandelbrot-hud-progress-fill');
         hudDetail   = document.getElementById('mandelbrot-hud-detail');
@@ -213,14 +204,14 @@ window.VizMandelbrot = (function () {
             var py = (e.clientY - rect.top) * scaleY;
             centerX = centerX + (px - W / 2) / zoom;
             centerY = centerY + (py - H / 2) / zoom;
-            zoom *= 2;
+            zoom *= ZOOM_FACTOR;
             startRender();
         });
 
         // Right-click to zoom out
         canvas.addEventListener('contextmenu', function (e) {
             e.preventDefault();
-            zoom = Math.max(50, zoom / 2);
+            zoom = Math.max(MIN_ZOOM, zoom / ZOOM_FACTOR);
             startRender();
         });
 
@@ -238,18 +229,18 @@ window.VizMandelbrot = (function () {
         });
 
         btnZoomOut.addEventListener('click', function () {
-            zoom = Math.max(50, zoom / 2);
+            zoom = Math.max(MIN_ZOOM, zoom / ZOOM_FACTOR);
             startRender();
         });
 
         btnReset.addEventListener('click', function () {
-            centerX = DEFAULT_CX; centerY = DEFAULT_CY; zoom = DEFAULT_ZOOM;
-            startRender();
+            resetView();
         });
 
         iterSlider.addEventListener('input', function () {
             maxIter = parseInt(this.value);
             iterVal.textContent = maxIter;
+            iterSlider.setAttribute('aria-valuenow', maxIter);
             startRender();
         });
 
@@ -258,6 +249,22 @@ window.VizMandelbrot = (function () {
             startRender();
         });
 
+        startRender();
+    }
+
+    function resetView() {
+        centerX = DEFAULT_CX; centerY = DEFAULT_CY; zoom = DEFAULT_ZOOM;
+        startRender();
+    }
+
+    function adjustSlider(direction) {
+        var step = parseInt(iterSlider.step) || 50;
+        var newVal = parseInt(iterSlider.value) + direction * step;
+        newVal = Math.max(parseInt(iterSlider.min), Math.min(parseInt(iterSlider.max), newVal));
+        iterSlider.value = newVal;
+        maxIter = newVal;
+        iterVal.textContent = maxIter;
+        iterSlider.setAttribute('aria-valuenow', maxIter);
         startRender();
     }
 
@@ -272,5 +279,11 @@ window.VizMandelbrot = (function () {
         startRender();
     }
 
-    return { init: init, pause: pause, resume: resume };
+    return {
+        init: init,
+        pause: pause,
+        resume: resume,
+        reset: resetView,
+        adjustSlider: adjustSlider
+    };
 })();

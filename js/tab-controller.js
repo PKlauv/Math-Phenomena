@@ -1,5 +1,6 @@
 // ==========================================================================
 // Tab Controller — SPA tab switching, hash routing, lazy initialization
+// Exposes: window.TabController = { switchTab(), getCurrentTab() }
 // ==========================================================================
 
 (function () {
@@ -31,10 +32,15 @@
     function updateNavActive(tabName) {
         for (var i = 0; i < navLinks.length; i++) {
             var link = navLinks[i];
-            if (link.getAttribute('data-tab') === tabName) {
+            var linkTab = link.getAttribute('data-tab');
+            if (linkTab === tabName) {
                 link.classList.add('active');
             } else {
                 link.classList.remove('active');
+            }
+            // Update ARIA for tab-role elements
+            if (link.getAttribute('role') === 'tab') {
+                link.setAttribute('aria-selected', linkTab === tabName ? 'true' : 'false');
             }
         }
     }
@@ -93,9 +99,11 @@
         setTimeout(function () {
             if (oldPanel) {
                 oldPanel.classList.remove('active');
+                oldPanel.setAttribute('hidden', '');
             }
 
             newPanel.classList.add('active');
+            newPanel.removeAttribute('hidden');
 
             // Force reflow before adding visible class for transition
             newPanel.offsetHeight; // eslint-disable-line no-unused-expressions
@@ -121,7 +129,17 @@
                     resumeTab(tabName);
                 }
             }
+
+            // Announce tab switch to screen readers
+            if (window.VizShared && VizShared.announce) {
+                var label = tabName === 'home' ? 'Home' : tabName.charAt(0).toUpperCase() + tabName.slice(1);
+                VizShared.announce('Switched to ' + label);
+            }
         }, FADE_DURATION);
+    }
+
+    function getCurrentTab() {
+        return currentTab;
     }
 
     // --- Event: click on nav links and cards ---
@@ -149,12 +167,18 @@
         var validTabs = ['home', 'lorenz', 'mobius', 'klein', 'sierpinski', 'mandelbrot'];
         if (validTabs.indexOf(hash) === -1) hash = 'home';
 
-        // Set up initial panel (no transition)
-        var panel = getPanel(hash);
-        if (panel) {
-            panel.classList.add('active');
-            panel.classList.add('visible');
-        }
+        // Set up initial panel (no transition) and hide others
+        validTabs.forEach(function (tab) {
+            var panel = getPanel(tab);
+            if (!panel) return;
+            if (tab === hash) {
+                panel.classList.add('active');
+                panel.classList.add('visible');
+                panel.removeAttribute('hidden');
+            } else {
+                panel.setAttribute('hidden', '');
+            }
+        });
 
         updateNavActive(hash);
         currentTab = hash;
@@ -178,5 +202,11 @@
         if (document.hidden) { pauseTab(currentTab); }
         else { resumeTab(currentTab); }
     });
+
+    // Expose public API for keyboard shortcuts
+    window.TabController = {
+        switchTab: switchTab,
+        getCurrentTab: getCurrentTab
+    };
 
 })();

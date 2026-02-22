@@ -1,6 +1,6 @@
 // ==========================================================================
 // Klein Bottle — extracted module for SPA tab integration
-// Exposes: window.VizKlein = { init(), pause(), resume() }
+// Exposes: window.VizKlein = { init(), pause(), resume(), togglePause(), reset(), adjustSlider() }
 // All DOM IDs are prefixed with "klein-"
 // ==========================================================================
 
@@ -15,7 +15,6 @@ window.VizKlein = (function () {
     var DEFAULT_OPACITY = 1.0;
     var ORBIT_SPEED_PER_SEC = 0.003 * 60;  // per-second orbit speed (was per-frame)
     var FRAME_INTERVAL = 1000 / 30;        // target ~30fps
-    var RESUME_DELAY = 5000;
 
     // DOM references
     var plotDiv, hudPhase, hudDetail;
@@ -29,7 +28,6 @@ window.VizKlein = (function () {
     var resumeTimer = null;
     var currentOpacity = DEFAULT_OPACITY;
     var hudFrameCount = 0;
-    var HUD_UPDATE_INTERVAL = 6;
     var glSceneRef = null;
     var lastFrameTime = 0;
 
@@ -108,7 +106,7 @@ window.VizKlein = (function () {
         lastFrameTime = timestamp;
 
         hudFrameCount++;
-        if (hudFrameCount >= HUD_UPDATE_INTERVAL) {
+        if (hudFrameCount >= VizShared.HUD_UPDATE_INTERVAL) {
             hudFrameCount = 0;
             updateHUD();
         }
@@ -139,13 +137,15 @@ window.VizKlein = (function () {
         if (manualPause) return;
         rotating = false;
         btnPause.textContent = '\u25B6';
+        btnPause.setAttribute('aria-label', 'Resume rotation');
         clearTimeout(resumeTimer);
         resumeTimer = setTimeout(function () {
             if (!manualPause) {
                 rotating = true;
                 btnPause.textContent = '\u23F8';
+                btnPause.setAttribute('aria-label', 'Pause rotation');
             }
-        }, RESUME_DELAY);
+        }, VizShared.RESUME_DELAY);
     }
 
     // --- Public interface ---
@@ -154,6 +154,11 @@ window.VizKlein = (function () {
         if (initialized) return;
         initialized = true;
         active = true;
+
+        if (typeof Plotly === 'undefined') {
+            console.warn('VizKlein: Plotly not loaded');
+            return;
+        }
 
         plotDiv        = document.getElementById('klein-plot');
         hudPhase       = document.getElementById('klein-hud-phase');
@@ -174,34 +179,12 @@ window.VizKlein = (function () {
             lightposition: { x: 100, y: 200, z: 300 }
         };
 
-        var axStyle = {
-            title: '', showticklabels: false,
-            showgrid: true, gridcolor: '#1a1a1a',
-            zerolinecolor: '#222', backgroundcolor: '#101010',
-            showspikes: false
-        };
+        var layout = VizShared.plotlyBaseLayout({
+            camera: { eye: { x: DEFAULT_EYE.x, y: DEFAULT_EYE.y, z: DEFAULT_EYE.z } }
+        });
 
-        var layout = {
-            paper_bgcolor: '#101010', plot_bgcolor: '#101010',
-            scene: {
-                bgcolor: '#101010',
-                xaxis: axStyle, yaxis: axStyle, zaxis: axStyle,
-                camera: { eye: { x: DEFAULT_EYE.x, y: DEFAULT_EYE.y, z: DEFAULT_EYE.z } },
-                dragmode: 'orbit'
-            },
-            margin: { l: 0, r: 0, t: 0, b: 0 },
-            showlegend: false
-        };
-
-        var config = { responsive: true, displayModeBar: false, scrollZoom: false };
-
-        Plotly.newPlot(plotDiv, [trace], layout, config);
-
-        // Let page scroll through the 3D plot — Plotly's gl-plot3d
-        // orbit controller consumes wheel events even with scrollZoom:false
-        plotDiv.addEventListener('wheel', function (e) {
-            e.stopImmediatePropagation();
-        }, { capture: true, passive: true });
+        Plotly.newPlot(plotDiv, [trace], layout, VizShared.PLOTLY_CONFIG);
+        VizShared.fixPlotlyScroll(plotDiv);
 
         // Grab the WebGL scene reference immediately to avoid relayout fallback
         var s = plotDiv._fullLayout && plotDiv._fullLayout.scene &&
@@ -214,34 +197,18 @@ window.VizKlein = (function () {
         plotDiv.addEventListener('touchstart', interactionPause);
 
         btnPause.addEventListener('click', function () {
-            if (rotating) {
-                rotating = false; manualPause = true;
-                clearTimeout(resumeTimer);
-                btnPause.textContent = '\u25B6';
-            } else {
-                rotating = true; manualPause = false;
-                clearTimeout(resumeTimer);
-                btnPause.textContent = '\u23F8';
-            }
-            updateHUD();
+            togglePause();
         });
 
         btnReset.addEventListener('click', function () {
-            orbitAngle = Math.atan2(DEFAULT_EYE.y, DEFAULT_EYE.x);
-            rotating = true; manualPause = false;
-            clearTimeout(resumeTimer);
-            btnPause.textContent = '\u23F8';
-            glSceneRef = null;
-            Plotly.relayout(plotDiv, {
-                'scene.camera.eye': { x: DEFAULT_EYE.x, y: DEFAULT_EYE.y, z: DEFAULT_EYE.z }
-            });
-            updateHUD();
+            resetCamera();
         });
 
         var opacityRafPending = false;
         opacitySlider.addEventListener('input', function () {
             currentOpacity = parseFloat(this.value);
             opacityVal.textContent = currentOpacity.toFixed(2);
+            opacitySlider.setAttribute('aria-valuenow', currentOpacity);
             if (!opacityRafPending) {
                 opacityRafPending = true;
                 requestAnimationFrame(function () {
@@ -251,7 +218,55 @@ window.VizKlein = (function () {
             }
         });
 
+        // Theme change listener
+        document.addEventListener('themechange', function () {
+            if (initialized && plotDiv) {
+                glSceneRef = null;
+                VizShared.relayoutPlotlyTheme(plotDiv);
+            }
+        });
+
         requestAnimationFrame(tick);
+    }
+
+    function togglePause() {
+        if (rotating) {
+            rotating = false; manualPause = true;
+            clearTimeout(resumeTimer);
+            btnPause.textContent = '\u25B6';
+            btnPause.setAttribute('aria-label', 'Resume rotation');
+            VizShared.announce('Paused');
+        } else {
+            rotating = true; manualPause = false;
+            clearTimeout(resumeTimer);
+            btnPause.textContent = '\u23F8';
+            btnPause.setAttribute('aria-label', 'Pause rotation');
+            VizShared.announce('Resumed');
+        }
+        updateHUD();
+    }
+
+    function resetCamera() {
+        orbitAngle = Math.atan2(DEFAULT_EYE.y, DEFAULT_EYE.x);
+        rotating = true; manualPause = false;
+        clearTimeout(resumeTimer);
+        btnPause.textContent = '\u23F8';
+        btnPause.setAttribute('aria-label', 'Pause rotation');
+        glSceneRef = null;
+        Plotly.relayout(plotDiv, {
+            'scene.camera.eye': { x: DEFAULT_EYE.x, y: DEFAULT_EYE.y, z: DEFAULT_EYE.z }
+        });
+        updateHUD();
+    }
+
+    function adjustSlider(direction) {
+        var newVal = parseFloat(opacitySlider.value) + direction * parseFloat(opacitySlider.step);
+        newVal = Math.max(parseFloat(opacitySlider.min), Math.min(parseFloat(opacitySlider.max), newVal));
+        opacitySlider.value = newVal;
+        currentOpacity = newVal;
+        opacityVal.textContent = currentOpacity.toFixed(2);
+        opacitySlider.setAttribute('aria-valuenow', currentOpacity);
+        Plotly.restyle(plotDiv, { opacity: currentOpacity }, 0);
     }
 
     function pause() {
@@ -269,5 +284,12 @@ window.VizKlein = (function () {
         });
     }
 
-    return { init: init, pause: pause, resume: resume };
+    return {
+        init: init,
+        pause: pause,
+        resume: resume,
+        togglePause: togglePause,
+        reset: resetCamera,
+        adjustSlider: adjustSlider
+    };
 })();

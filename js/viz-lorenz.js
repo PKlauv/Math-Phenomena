@@ -1,6 +1,6 @@
 // ==========================================================================
 // Lorenz Attractor — extracted module for SPA tab integration
-// Exposes: window.VizLorenz = { init(), pause(), resume() }
+// Exposes: window.VizLorenz = { init(), pause(), resume(), togglePause(), reset(), skip() }
 // All DOM IDs are prefixed with "lorenz-"
 // ==========================================================================
 
@@ -42,9 +42,7 @@ window.VizLorenz = (function () {
     var manualPause = false;
     var resumeTimer = null;
     var pauseStart = 0;
-    var RESUME_DELAY = 5000;
     var hudFrameCount = 0;
-    var HUD_UPDATE_INTERVAL = 6;
 
     // Inferno colorscale
     var inferno = [
@@ -99,13 +97,7 @@ window.VizLorenz = (function () {
         for (var i = captions.length - 1; i >= 0; i--) {
             if (progress >= captions[i].at) { text = captions[i].text; break; }
         }
-        if (captionDiv.textContent !== text) {
-            captionDiv.style.opacity = '0';
-            setTimeout(function () {
-                captionDiv.textContent = text;
-                captionDiv.style.opacity = '1';
-            }, 300);
-        }
+        VizShared.fadeCaption(captionDiv, text);
     }
 
     function updateHUD() {
@@ -116,7 +108,7 @@ window.VizLorenz = (function () {
                 if (hudDetail.textContent !== 'Paused') hudDetail.textContent = 'Paused';
             } else {
                 var elapsed = Date.now() - pauseStart;
-                var remaining = Math.max(0, Math.ceil((RESUME_DELAY - elapsed) / 1000));
+                var remaining = Math.max(0, Math.ceil((VizShared.RESUME_DELAY - elapsed) / 1000));
                 hudDetail.textContent = 'Resuming in ' + remaining + 's\u2026';
             }
             return;
@@ -160,21 +152,13 @@ window.VizLorenz = (function () {
         phase = 'orbit';
         frame = 0;
         Plotly.restyle(plotDiv, { 'marker.opacity': [0] }, 1);
-        captionDiv.style.opacity = '0';
-        setTimeout(function () {
-            captionDiv.textContent = 'Drag to look around, or hit reset to run it again';
-            captionDiv.style.opacity = '1';
-        }, 300);
+        VizShared.fadeCaption(captionDiv, 'Drag to look around, or hit reset to run it again');
     }
 
     function transitionToDone() {
         phase = 'done';
         frame = ORBIT_FRAMES;
-        captionDiv.style.opacity = '0';
-        setTimeout(function () {
-            captionDiv.textContent = 'Press reset to replay';
-            captionDiv.style.opacity = '1';
-        }, 300);
+        VizShared.fadeCaption(captionDiv, 'Press reset to replay');
     }
 
     function resetToStart() {
@@ -186,6 +170,7 @@ window.VizLorenz = (function () {
         manualPause = false;
         clearTimeout(resumeTimer);
         btnPause.textContent = '\u23F8';
+        btnPause.setAttribute('aria-label', 'Pause animation');
 
         Plotly.restyle(plotDiv, {
             x: [[allX[0]]], y: [[allY[0]]], z: [[allZ[0]]],
@@ -204,7 +189,7 @@ window.VizLorenz = (function () {
         if (!active) return;
 
         hudFrameCount++;
-        if (hudFrameCount >= HUD_UPDATE_INTERVAL) {
+        if (hudFrameCount >= VizShared.HUD_UPDATE_INTERVAL) {
             hudFrameCount = 0;
             updateHUD();
         }
@@ -217,7 +202,6 @@ window.VizLorenz = (function () {
             drawnPoints = target;
             var tipIdx = drawnPoints - 1;
 
-            // Append only the new batch of points instead of re-slicing the entire array
             Plotly.extendTraces(plotDiv, {
                 x: [allX.slice(prevDrawn, drawnPoints)],
                 y: [allY.slice(prevDrawn, drawnPoints)],
@@ -259,13 +243,15 @@ window.VizLorenz = (function () {
         manualPause = false;
         pauseStart = Date.now();
         btnPause.textContent = '\u25B6';
+        btnPause.setAttribute('aria-label', 'Resume animation');
         clearTimeout(resumeTimer);
         resumeTimer = setTimeout(function () {
             if (!manualPause) {
                 paused = false;
                 btnPause.textContent = '\u23F8';
+                btnPause.setAttribute('aria-label', 'Pause animation');
             }
-        }, RESUME_DELAY);
+        }, VizShared.RESUME_DELAY);
     }
 
     // --- Public interface ---
@@ -274,6 +260,11 @@ window.VizLorenz = (function () {
         if (initialized) return;
         initialized = true;
         active = true;
+
+        if (typeof Plotly === 'undefined') {
+            console.warn('VizLorenz: Plotly not loaded');
+            return;
+        }
 
         computeTrajectory();
 
@@ -305,34 +296,12 @@ window.VizLorenz = (function () {
             hoverinfo: 'skip'
         };
 
-        var axStyle = {
-            title: '', showticklabels: false,
-            showgrid: true, gridcolor: '#1a1a1a',
-            zerolinecolor: '#222', backgroundcolor: '#101010',
-            showspikes: false
-        };
+        var layout = VizShared.plotlyBaseLayout({
+            camera: { eye: { x: 1.8, y: 1.8, z: 1.6 } }
+        });
 
-        var layout = {
-            paper_bgcolor: '#101010', plot_bgcolor: '#101010',
-            scene: {
-                bgcolor: '#101010',
-                xaxis: axStyle, yaxis: axStyle, zaxis: axStyle,
-                camera: { eye: { x: 1.8, y: 1.8, z: 1.6 } },
-                dragmode: 'orbit'
-            },
-            margin: { l: 0, r: 0, t: 0, b: 0 },
-            showlegend: false
-        };
-
-        var config = { responsive: true, displayModeBar: false, scrollZoom: false };
-
-        Plotly.newPlot(plotDiv, [trace, leadingPoint], layout, config);
-
-        // Let page scroll through the 3D plot — Plotly's gl-plot3d
-        // orbit controller consumes wheel events even with scrollZoom:false
-        plotDiv.addEventListener('wheel', function (e) {
-            e.stopImmediatePropagation();
-        }, { capture: true, passive: true });
+        Plotly.newPlot(plotDiv, [trace, leadingPoint], layout, VizShared.PLOTLY_CONFIG);
+        VizShared.fixPlotlyScroll(plotDiv);
 
         phase = 'draw';
         frame = 0;
@@ -343,41 +312,61 @@ window.VizLorenz = (function () {
         plotDiv.addEventListener('touchstart', interactionPause);
 
         btnPause.addEventListener('click', function () {
-            if (phase === 'done') return;
-            if (paused) {
-                paused = false; manualPause = false;
-                clearTimeout(resumeTimer);
-                btnPause.textContent = '\u23F8';
-            } else {
-                paused = true; manualPause = true;
-                clearTimeout(resumeTimer);
-                btnPause.textContent = '\u25B6';
-            }
+            togglePause();
         });
 
         btnSkip.addEventListener('click', function () {
-            if (phase === 'done') return;
-            if (paused) {
-                paused = false; manualPause = false;
-                clearTimeout(resumeTimer);
-                btnPause.textContent = '\u23F8';
-            }
-            if (phase === 'draw') {
-                drawnPoints = STEPS;
-                Plotly.restyle(plotDiv, {
-                    x: [allX], y: [allY], z: [allZ], 'line.color': [allC]
-                }, 0);
-                transitionToOrbit();
-            } else if (phase === 'orbit') {
-                transitionToDone();
-            }
+            skip();
         });
 
         btnReset.addEventListener('click', function () {
             resetToStart();
         });
 
+        // Theme change listener
+        document.addEventListener('themechange', function () {
+            if (initialized && plotDiv) {
+                VizShared.relayoutPlotlyTheme(plotDiv);
+            }
+        });
+
         requestAnimationFrame(tick);
+    }
+
+    function togglePause() {
+        if (phase === 'done') return;
+        if (paused) {
+            paused = false; manualPause = false;
+            clearTimeout(resumeTimer);
+            btnPause.textContent = '\u23F8';
+            btnPause.setAttribute('aria-label', 'Pause animation');
+            VizShared.announce('Resumed');
+        } else {
+            paused = true; manualPause = true;
+            clearTimeout(resumeTimer);
+            btnPause.textContent = '\u25B6';
+            btnPause.setAttribute('aria-label', 'Resume animation');
+            VizShared.announce('Paused');
+        }
+    }
+
+    function skip() {
+        if (phase === 'done') return;
+        if (paused) {
+            paused = false; manualPause = false;
+            clearTimeout(resumeTimer);
+            btnPause.textContent = '\u23F8';
+            btnPause.setAttribute('aria-label', 'Pause animation');
+        }
+        if (phase === 'draw') {
+            drawnPoints = STEPS;
+            Plotly.restyle(plotDiv, {
+                x: [allX], y: [allY], z: [allZ], 'line.color': [allC]
+            }, 0);
+            transitionToOrbit();
+        } else if (phase === 'orbit') {
+            transitionToDone();
+        }
     }
 
     function pause() {
@@ -394,5 +383,12 @@ window.VizLorenz = (function () {
         });
     }
 
-    return { init: init, pause: pause, resume: resume };
+    return {
+        init: init,
+        pause: pause,
+        resume: resume,
+        togglePause: togglePause,
+        reset: resetToStart,
+        skip: skip
+    };
 })();

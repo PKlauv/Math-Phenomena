@@ -28,7 +28,7 @@
     font-size: 2.6rem;
     font-weight: 400;
     letter-spacing: 0.5px;
-    color: #eee;
+    color: var(--text-heading);
     margin-bottom: 12px;
 }
 .landing-header .tagline {
@@ -81,7 +81,7 @@
     font-family: var(--font-body);
     font-weight: 400;
     font-size: 1.3rem;
-    color: #eee;
+    color: var(--text-heading);
     margin: 8px 0;
 }
 .viz-card-body p {
@@ -98,7 +98,7 @@
 }
 .landing-footer .credit {
     margin-bottom: 28px;
-    color: #666;
+    color: var(--text-faint);
     font-size: 0.75rem;
 }
 .feedback-form {
@@ -126,10 +126,11 @@
     margin-bottom: 12px;
     resize: vertical;
 }
-.feedback-form input[type="text"]:focus,
-.feedback-form select:focus,
-.feedback-form textarea:focus {
-    outline: none;
+.feedback-form input[type="text"]:focus-visible,
+.feedback-form select:focus-visible,
+.feedback-form textarea:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
     border-color: var(--accent);
 }
 .feedback-form textarea {
@@ -170,12 +171,13 @@
 
 <nav class="site-nav">
     <a href="#home" class="nav-home" data-tab="home">Math Phenomena, Visualized</a>
-    <div class="nav-links">
-        <a href="#lorenz" data-tab="lorenz">Lorenz</a>
-        <a href="#mobius" data-tab="mobius">Mobius</a>
-        <a href="#klein" data-tab="klein">Klein</a>
-        <a href="#sierpinski" data-tab="sierpinski">Sierpinski</a>
-        <a href="#mandelbrot" data-tab="mandelbrot">Mandelbrot</a>
+    <div class="nav-links" role="tablist" aria-label="Visualizations">
+        <a href="#lorenz" data-tab="lorenz" role="tab" id="tab-lorenz" aria-selected="false" aria-controls="panel-lorenz">Lorenz</a>
+        <a href="#mobius" data-tab="mobius" role="tab" id="tab-mobius" aria-selected="false" aria-controls="panel-mobius">Mobius</a>
+        <a href="#klein" data-tab="klein" role="tab" id="tab-klein" aria-selected="false" aria-controls="panel-klein">Klein</a>
+        <a href="#sierpinski" data-tab="sierpinski" role="tab" id="tab-sierpinski" aria-selected="false" aria-controls="panel-sierpinski">Sierpinski</a>
+        <a href="#mandelbrot" data-tab="mandelbrot" role="tab" id="tab-mandelbrot" aria-selected="false" aria-controls="panel-mandelbrot">Mandelbrot</a>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Switch theme" title="Toggle dark/light theme">&#x2600;</button>
     </div>
 </nav>
 
@@ -184,7 +186,7 @@
 <!-- ============================================================
      HOME PANEL — Card grid landing page
      ============================================================ -->
-<div class="tab-panel" id="panel-home">
+<div class="tab-panel" id="panel-home" role="tabpanel" aria-label="Home">
 
 <div class="container">
 <div class="landing-header">
@@ -194,8 +196,8 @@
 </div>
 
 <div class="viz-grid">
-    <div class="viz-card" data-tab="lorenz">
-        <canvas class="viz-thumb" id="thumb-lorenz"></canvas>
+    <div class="viz-card" data-tab="lorenz" tabindex="0" role="link" aria-label="Lorenz Attractor — Chaos Theory">
+        <canvas class="viz-thumb" id="thumb-lorenz" role="img" aria-label="Lorenz attractor preview"></canvas>
         <div class="viz-card-body">
             <span class="viz-tag">Chaos Theory</span>
             <h3>Lorenz Attractor</h3>
@@ -203,8 +205,8 @@
         </div>
     </div>
 
-    <div class="viz-card" data-tab="mobius">
-        <canvas class="viz-thumb" id="thumb-mobius"></canvas>
+    <div class="viz-card" data-tab="mobius" tabindex="0" role="link" aria-label="Mobius Strip — Topology">
+        <canvas class="viz-thumb" id="thumb-mobius" role="img" aria-label="Mobius strip preview"></canvas>
         <div class="viz-card-body">
             <span class="viz-tag">Topology</span>
             <h3>Mobius Strip</h3>
@@ -212,8 +214,8 @@
         </div>
     </div>
 
-    <div class="viz-card" data-tab="klein">
-        <canvas class="viz-thumb" id="thumb-klein"></canvas>
+    <div class="viz-card" data-tab="klein" tabindex="0" role="link" aria-label="Klein Bottle — Topology">
+        <canvas class="viz-thumb" id="thumb-klein" role="img" aria-label="Klein bottle preview"></canvas>
         <div class="viz-card-body">
             <span class="viz-tag">Topology</span>
             <h3>Klein Bottle</h3>
@@ -221,8 +223,8 @@
         </div>
     </div>
 
-    <div class="viz-card" data-tab="sierpinski">
-        <canvas class="viz-thumb" id="thumb-sierpinski"></canvas>
+    <div class="viz-card" data-tab="sierpinski" tabindex="0" role="link" aria-label="Sierpinski Triangle — Fractal">
+        <canvas class="viz-thumb" id="thumb-sierpinski" role="img" aria-label="Sierpinski triangle preview"></canvas>
         <div class="viz-card-body">
             <span class="viz-tag">Fractal</span>
             <h3>Sierpinski Triangle</h3>
@@ -230,8 +232,8 @@
         </div>
     </div>
 
-    <div class="viz-card" data-tab="mandelbrot">
-        <canvas class="viz-thumb" id="thumb-mandelbrot"></canvas>
+    <div class="viz-card" data-tab="mandelbrot" tabindex="0" role="link" aria-label="Mandelbrot Set — Fractal">
+        <canvas class="viz-thumb" id="thumb-mandelbrot" role="img" aria-label="Mandelbrot set preview"></canvas>
         <div class="viz-card-body">
             <span class="viz-tag">Fractal</span>
             <h3>Mandelbrot Set</h3>
@@ -264,7 +266,7 @@
 <!-- ============================================================
      LORENZ PANEL
      ============================================================ -->
-<div class="tab-panel" id="panel-lorenz">
+<div class="tab-panel" id="panel-lorenz" role="tabpanel" aria-labelledby="tab-lorenz">
 
 <div class="container">
 <header>
@@ -281,9 +283,9 @@
         <div class="viz-hud-detail" id="lorenz-hud-detail"></div>
     </div>
     <div class="viz-controls" id="lorenz-controls">
-        <button id="lorenz-btn-pause" title="Pause / Play">&#x23F8;</button>
-        <button id="lorenz-btn-skip" title="Skip phase">&#x23ED;</button>
-        <button id="lorenz-btn-reset" title="Reset">&#x21BA;</button>
+        <button id="lorenz-btn-pause" title="Pause / Play" aria-label="Pause animation">&#x23F8;</button>
+        <button id="lorenz-btn-skip" title="Skip phase" aria-label="Skip to next phase">&#x23ED;</button>
+        <button id="lorenz-btn-reset" title="Reset" aria-label="Reset visualization">&#x21BA;</button>
     </div>
 </div>
 <div class="viz-caption" id="lorenz-caption"></div>
@@ -441,7 +443,7 @@
 <!-- ============================================================
      MOBIUS PANEL
      ============================================================ -->
-<div class="tab-panel" id="panel-mobius">
+<div class="tab-panel" id="panel-mobius" role="tabpanel" aria-labelledby="tab-mobius">
 
 <div class="container">
 <header>
@@ -458,19 +460,19 @@
         <div class="viz-hud-detail" id="mobius-hud-detail"></div>
     </div>
     <div class="viz-controls" id="mobius-controls">
-        <button id="mobius-btn-pause" title="Pause / Play">&#x23F8;</button>
-        <button id="mobius-btn-skip" title="Skip phase">&#x23ED;</button>
-        <button id="mobius-btn-reset" title="Reset">&#x21BA;</button>
+        <button id="mobius-btn-pause" title="Pause / Play" aria-label="Pause animation">&#x23F8;</button>
+        <button id="mobius-btn-skip" title="Skip phase" aria-label="Skip to next phase">&#x23ED;</button>
+        <button id="mobius-btn-reset" title="Reset" aria-label="Reset visualization">&#x21BA;</button>
     </div>
 </div>
 <div class="viz-sliders" id="mobius-sliders">
     <div class="slider-group">
-        <label>Half-twists <span id="mobius-twist-val">1</span></label>
-        <input type="range" id="mobius-twist-slider" min="1" max="5" step="1" value="1">
+        <label for="mobius-twist-slider">Half-twists <span id="mobius-twist-val">1</span></label>
+        <input type="range" id="mobius-twist-slider" min="1" max="5" step="1" value="1" aria-valuenow="1">
     </div>
     <div class="slider-group">
-        <label>Width <span id="mobius-width-val">0.40</span></label>
-        <input type="range" id="mobius-width-slider" min="0.1" max="0.8" step="0.05" value="0.4">
+        <label for="mobius-width-slider">Width <span id="mobius-width-val">0.40</span></label>
+        <input type="range" id="mobius-width-slider" min="0.1" max="0.8" step="0.05" value="0.4" aria-valuenow="0.4">
     </div>
 </div>
 <div class="viz-caption" id="mobius-caption"></div>
@@ -580,7 +582,7 @@
 <!-- ============================================================
      KLEIN PANEL
      ============================================================ -->
-<div class="tab-panel" id="panel-klein">
+<div class="tab-panel" id="panel-klein" role="tabpanel" aria-labelledby="tab-klein">
 
 <div class="container">
 <header>
@@ -596,15 +598,15 @@
         <div class="viz-hud-detail" id="klein-hud-detail"></div>
     </div>
     <div class="viz-controls" id="klein-controls">
-        <button id="klein-btn-pause" title="Pause / Play">&#x23F8;</button>
-        <button id="klein-btn-reset" title="Reset camera">&#x21BA;</button>
+        <button id="klein-btn-pause" title="Pause / Play" aria-label="Pause rotation">&#x23F8;</button>
+        <button id="klein-btn-reset" title="Reset camera" aria-label="Reset camera">&#x21BA;</button>
     </div>
 </div>
 <div class="viz-caption" id="klein-caption"></div>
 <div class="viz-sliders" id="klein-sliders">
     <div class="slider-group">
-        <label>Opacity <span id="klein-opacity-val">1.00</span></label>
-        <input type="range" id="klein-opacity-slider" min="0.3" max="1.0" step="0.05" value="1.00">
+        <label for="klein-opacity-slider">Opacity <span id="klein-opacity-val">1.00</span></label>
+        <input type="range" id="klein-opacity-slider" min="0.3" max="1.0" step="0.05" value="1.00" aria-valuenow="1.0">
     </div>
 </div>
 
@@ -699,7 +701,7 @@
 <!-- ============================================================
      SIERPINSKI PANEL
      ============================================================ -->
-<div class="tab-panel" id="panel-sierpinski">
+<div class="tab-panel" id="panel-sierpinski" role="tabpanel" aria-labelledby="tab-sierpinski">
 
 <div class="container">
 <header>
@@ -709,22 +711,22 @@
 </div>
 
 <div class="canvas-wrapper" id="sierpinski-canvas-wrapper">
-    <canvas class="viz-canvas" id="sierpinski-canvas"></canvas>
+    <canvas class="viz-canvas" id="sierpinski-canvas" role="img" aria-label="Sierpinski triangle fractal visualization"></canvas>
     <div class="viz-hud hud-low" id="sierpinski-hud">
         <div class="viz-hud-phase" id="sierpinski-hud-phase"></div>
         <div class="viz-hud-progress"><div class="viz-hud-progress-fill" id="sierpinski-hud-progress-fill"></div></div>
         <div class="viz-hud-detail" id="sierpinski-hud-detail"></div>
     </div>
     <div class="viz-controls controls-low" id="sierpinski-controls">
-        <button id="sierpinski-btn-pause" title="Pause / Play">&#x23F8;</button>
-        <button id="sierpinski-btn-skip" title="Skip to end">&#x23ED;</button>
-        <button id="sierpinski-btn-reset" title="Reset">&#x21BA;</button>
+        <button id="sierpinski-btn-pause" title="Pause / Play" aria-label="Pause animation">&#x23F8;</button>
+        <button id="sierpinski-btn-skip" title="Skip to end" aria-label="Skip to end">&#x23ED;</button>
+        <button id="sierpinski-btn-reset" title="Reset" aria-label="Reset visualization">&#x21BA;</button>
     </div>
 </div>
 <div class="viz-sliders" style="max-width:960px;margin:0 auto;">
     <div class="slider-group">
-        <label>Depth <span id="sierpinski-depth-val">7</span></label>
-        <input type="range" id="sierpinski-depth-slider" min="0" max="9" step="1" value="7">
+        <label for="sierpinski-depth-slider">Depth <span id="sierpinski-depth-val">7</span></label>
+        <input type="range" id="sierpinski-depth-slider" min="0" max="9" step="1" value="7" aria-valuenow="7">
     </div>
     <div class="slider-group">
         <label>Method</label>
@@ -809,7 +811,7 @@
 <!-- ============================================================
      MANDELBROT PANEL
      ============================================================ -->
-<div class="tab-panel" id="panel-mandelbrot">
+<div class="tab-panel" id="panel-mandelbrot" role="tabpanel" aria-labelledby="tab-mandelbrot">
 
 <div class="container">
 <header>
@@ -819,7 +821,7 @@
 </div>
 
 <div class="canvas-wrapper" id="mandelbrot-canvas-wrapper">
-    <canvas class="viz-canvas crosshair" id="mandelbrot-canvas"></canvas>
+    <canvas class="viz-canvas crosshair" id="mandelbrot-canvas" role="img" aria-label="Mandelbrot set fractal visualization — click to zoom"></canvas>
     <div class="viz-hud" id="mandelbrot-hud">
         <div class="viz-hud-phase" id="mandelbrot-hud-phase">RENDERING</div>
         <div class="viz-hud-progress"><div class="viz-hud-progress-fill" id="mandelbrot-hud-progress-fill"></div></div>
@@ -827,14 +829,14 @@
         <div class="viz-hud-coords" id="mandelbrot-hud-coords"></div>
     </div>
     <div class="viz-controls" id="mandelbrot-controls">
-        <button id="mandelbrot-btn-zoom-out" title="Zoom out">&minus;</button>
-        <button id="mandelbrot-btn-reset" title="Reset view">&#x21BA;</button>
+        <button id="mandelbrot-btn-zoom-out" title="Zoom out" aria-label="Zoom out">&minus;</button>
+        <button id="mandelbrot-btn-reset" title="Reset view" aria-label="Reset view">&#x21BA;</button>
     </div>
 </div>
 <div class="viz-sliders" id="mandelbrot-sliders">
     <div class="slider-group">
-        <label>Iterations <span id="mandelbrot-iter-val">200</span></label>
-        <input type="range" id="mandelbrot-iter-slider" min="50" max="1000" step="50" value="200">
+        <label for="mandelbrot-iter-slider">Iterations <span id="mandelbrot-iter-val">200</span></label>
+        <input type="range" id="mandelbrot-iter-slider" min="50" max="1000" step="50" value="200" aria-valuenow="200">
     </div>
     <div class="slider-group">
         <label>Colors</label>
@@ -927,6 +929,35 @@
 
 </main>
 
+<!-- Screen reader announcer -->
+<div id="sr-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+<!-- Keyboard shortcuts help overlay -->
+<div class="keyboard-help" id="keyboard-help" role="dialog" aria-label="Keyboard shortcuts">
+    <div class="keyboard-help-panel">
+        <h2>Keyboard Shortcuts</h2>
+        <button class="close-btn" aria-label="Close" onclick="this.closest('.keyboard-help').classList.remove('visible')">&times;</button>
+        <ul class="shortcut-list">
+            <li><span>Toggle play/pause</span> <kbd>Space</kbd></li>
+            <li><span>Reset visualization</span> <kbd>R</kbd></li>
+            <li><span>Skip to next phase</span> <kbd>S</kbd></li>
+            <li><span>Adjust primary slider</span> <kbd>&larr;</kbd> <kbd>&rarr;</kbd></li>
+            <li><span>Home</span> <kbd>0</kbd></li>
+            <li><span>Lorenz</span> <kbd>1</kbd></li>
+            <li><span>Mobius</span> <kbd>2</kbd></li>
+            <li><span>Klein</span> <kbd>3</kbd></li>
+            <li><span>Sierpinski</span> <kbd>4</kbd></li>
+            <li><span>Mandelbrot</span> <kbd>5</kbd></li>
+            <li><span>This help</span> <kbd>?</kbd></li>
+            <li><span>Close overlay</span> <kbd>Esc</kbd></li>
+        </ul>
+    </div>
+</div>
+
+<!-- Shared utilities (must load before tab controller and viz modules) -->
+<script src="js/viz-shared.js"></script>
+<script src="js/mandelbrot-palettes.js"></script>
+
 <!-- Tab controller (must load before viz modules) -->
 <script src="js/tab-controller.js"></script>
 
@@ -942,8 +973,9 @@
 (function () {
     'use strict';
 
-    var ACCENT = '#c8a26a';
-    var BG = '#101010';
+    var style = getComputedStyle(document.documentElement);
+    var ACCENT = style.getPropertyValue('--accent').trim() || '#c8a26a';
+    var BG = style.getPropertyValue('--bg').trim() || '#101010';
 
     function setupCanvas(id) {
         var c = document.getElementById(id);
@@ -1182,6 +1214,24 @@
     } else {
         scheduleIdle(drawAll);
     }
+
+    // Redraw thumbnails on theme change
+    document.addEventListener('themechange', function () {
+        var s = getComputedStyle(document.documentElement);
+        ACCENT = s.getPropertyValue('--accent').trim() || '#c8a26a';
+        BG = s.getPropertyValue('--bg').trim() || '#101010';
+        drawAll();
+    });
+
+    // Viz-card keyboard activation (Enter/Space)
+    document.querySelectorAll('.viz-card[data-tab]').forEach(function (card) {
+        card.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                card.click();
+            }
+        });
+    });
 })();
 </script>
 
