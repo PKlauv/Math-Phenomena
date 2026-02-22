@@ -139,6 +139,8 @@ The biggest structural change was consolidating everything into a single-page ap
 
 > What started as a Python primer turned into a deep dive into browser graphics, math, and vanilla JS architecture.
 
+This project was also a hands-on experiment with git, GitHub, and building things alongside AI. Most of the math, visualizations, and code were built with the assistance of AI tools. I don't claim original ownership of the math or the code. The goal was to learn by doing: practicing version control, working with GitHub Pages, and figuring out how to collaborate with AI to build something real.
+
 ## :page_facing_up: License
 
 [MIT](./LICENSE)
