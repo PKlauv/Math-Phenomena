@@ -112,6 +112,7 @@
     color: var(--text-dim);
     margin-bottom: 6px;
 }
+.feedback-form input[type="text"],
 .feedback-form select,
 .feedback-form textarea {
     width: 100%;
@@ -125,6 +126,7 @@
     margin-bottom: 12px;
     resize: vertical;
 }
+.feedback-form input[type="text"]:focus,
 .feedback-form select:focus,
 .feedback-form textarea:focus {
     outline: none;
@@ -239,10 +241,7 @@
 </div>
 
 <div class="landing-footer">
-    <p class="credit">Made by Pk Lauvstad | Built with vanilla HTML, CSS, and JavaScript</p>
     <form class="feedback-form" id="feedback-form">
-        <label for="feedback-name">Name / GitHub (optional)</label>
-        <input type="text" id="feedback-name" placeholder="@username or name" />
         <label for="feedback-category">Category</label>
         <select id="feedback-category">
             <option value="general">General feedback</option>
@@ -251,10 +250,12 @@
         </select>
         <label for="feedback-message">Message</label>
         <textarea id="feedback-message" placeholder="Suggestions, ideas, or anything else..." required></textarea>
+        <label for="feedback-name">Name / GitHub (optional)</label>
+        <input type="text" id="feedback-name" placeholder="@username or name" />
         <button type="submit">Send feedback</button>
         <div class="feedback-msg" id="feedback-msg"></div>
     </form>
-
+    <p class="credit">Made by Pk Lauvstad | Built with vanilla HTML, CSS, and JavaScript</p>
 </div>
 
 </div><!-- end panel-home -->
