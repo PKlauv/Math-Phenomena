@@ -318,10 +318,12 @@ footer a:hover { border-bottom-color: var(--accent); }
 }
 .viz-hud-progress-fill {
     height: 100%;
-    width: 0%;
+    width: 100%;
     background: var(--accent);
     border-radius: 2px;
-    transition: width 0.15s linear;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.15s linear;
 }
 .viz-hud-detail {
     font-family: var(--font-ui);

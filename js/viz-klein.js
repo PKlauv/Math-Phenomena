@@ -74,14 +74,15 @@ window.VizKlein = (function () {
 
     function updateHUD() {
         if (rotating) {
-            hudPhase.textContent = 'ROTATING';
+            if (hudPhase.textContent !== 'ROTATING') hudPhase.textContent = 'ROTATING';
             hudPhase.classList.remove('paused');
             var degrees = Math.round((orbitAngle % (2 * Math.PI)) / (2 * Math.PI) * 360);
             hudDetail.textContent = degrees + '\u00B0';
         } else {
-            hudPhase.textContent = 'PAUSED';
+            if (hudPhase.textContent !== 'PAUSED') hudPhase.textContent = 'PAUSED';
             hudPhase.classList.add('paused');
-            hudDetail.textContent = manualPause ? 'Paused' : 'Drag to explore';
+            var pauseText = manualPause ? 'Paused' : 'Drag to explore';
+            if (hudDetail.textContent !== pauseText) hudDetail.textContent = pauseText;
         }
     }
 
@@ -216,10 +217,17 @@ window.VizKlein = (function () {
             updateHUD();
         });
 
+        var opacityRafPending = false;
         opacitySlider.addEventListener('input', function () {
             currentOpacity = parseFloat(this.value);
             opacityVal.textContent = currentOpacity.toFixed(2);
-            Plotly.restyle(plotDiv, { opacity: currentOpacity }, 0);
+            if (!opacityRafPending) {
+                opacityRafPending = true;
+                requestAnimationFrame(function () {
+                    Plotly.restyle(plotDiv, { opacity: currentOpacity }, 0);
+                    opacityRafPending = false;
+                });
+            }
         });
 
         requestAnimationFrame(tick);
@@ -227,6 +235,7 @@ window.VizKlein = (function () {
 
     function pause() {
         active = false;
+        clearTimeout(resumeTimer);
     }
 
     function resume() {

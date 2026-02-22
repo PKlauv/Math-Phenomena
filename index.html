@@ -11,7 +11,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#8734;</text></svg>">
 <title>Math Visualizations</title>
 <!-- Plotly.js — interactive 3D plotting and animation -->
-<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script>
 <!-- MathJax 3 — renders LaTeX equations -->
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
 <link rel="stylesheet" href="css/shared.css">
@@ -1046,17 +1046,24 @@
     function drawMandelbrot() {
         var s = setupCanvas('thumb-mandelbrot');
         if (!s) return;
-        var ctx = s.ctx, w = s.w, h = s.h, dpr = s.dpr;
+        var ctx = s.ctx, w = s.w, h = s.h;
+        // Use 1x DPR for thumbnail — no need for retina on a 380x180 preview
+        var thumbDpr = 1;
         ctx.setTransform(1, 0, 0, 1, 0, 0);
-        var pw = w * dpr, ph = h * dpr;
+        var c = document.getElementById('thumb-mandelbrot');
+        c.width = w; c.height = h;
+        var pw = w, ph = h;
         var imgData = ctx.createImageData(pw, ph);
         var data = imgData.data;
         var cxM = -0.5, cyM = 0.0, zoomM = w / 3.5;
         var maxIter = 80;
+        var LOG2 = Math.log(2);
+        var halfW = w / 2, halfH = h / 2;
+        var invZoom = 1 / zoomM;
         for (var py = 0; py < ph; py++) {
             for (var px = 0; px < pw; px++) {
-                var x0 = cxM + (px / dpr - w / 2) / zoomM;
-                var y0 = cyM + (py / dpr - h / 2) / zoomM;
+                var x0 = cxM + (px - halfW) * invZoom;
+                var y0 = cyM + (py - halfH) * invZoom;
                 var x = 0, y = 0, xx = 0, yy = 0, iter = 0;
                 while (xx + yy <= 4 && iter < maxIter) {
                     y = 2 * x * y + y0;
@@ -1068,8 +1075,7 @@
                 if (iter === maxIter) {
                     data[idx] = 16; data[idx + 1] = 16; data[idx + 2] = 16;
                 } else {
-                    var log2 = Math.log(2);
-                    var nu = Math.log(Math.log(Math.sqrt(xx + yy)) / log2) / log2;
+                    var nu = Math.log(Math.log(Math.sqrt(xx + yy)) / LOG2) / LOG2;
                     var t = ((iter + 1 - nu) / maxIter * 6) % 1;
                     t = Math.max(0, Math.min(1, t));
                     var b = Math.pow(t, 0.7);
@@ -1092,13 +1098,14 @@
         drawMandelbrot();
     }
 
-    // Draw on load — the home panel starts visible
+    // Draw on load — deferred to idle time so initial paint isn't blocked
+    var scheduleIdle = window.requestIdleCallback || function (cb) { setTimeout(cb, 1); };
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function () {
-            requestAnimationFrame(drawAll);
+            scheduleIdle(drawAll);
         });
     } else {
-        requestAnimationFrame(drawAll);
+        scheduleIdle(drawAll);
     }
 })();
 </script>

@@ -187,4 +187,11 @@
         onLoad();
     }
 
+    // Stop animations when the browser tab is hidden to save CPU
+    document.addEventListener('visibilitychange', function () {
+        if (currentTab === 'home') return;
+        if (document.hidden) { pauseTab(currentTab); }
+        else { resumeTab(currentTab); }
+    });
+
 })();

@@ -65,19 +65,53 @@ window.VizMandelbrot = (function () {
     };
     var currentPalette = 'inferno';
 
+    // Hoisted constant
+    var LOG2 = Math.log(2);
+
     // Rendering state
     var rendering = false;
     var renderRow = 0;
     var imageData = null;
+    var worker = null;
+
+    // Try to create a Web Worker for off-thread Mandelbrot computation
+    try {
+        worker = new Worker('js/mandelbrot-worker.js');
+    } catch (e) {
+        worker = null;
+    }
 
     function startRender() {
         if (!active) return;
         rendering = true;
         renderRow = 0;
-        imageData = ctx.createImageData(W * dpr, H * dpr);
-        hudPhase.textContent = 'RENDERING';
-        hudFill.style.width = '0%';
-        requestAnimationFrame(renderBatch);
+
+        var pw = W * dpr, ph = H * dpr;
+
+        if (hudPhase) hudPhase.textContent = 'RENDERING';
+        if (hudFill) hudFill.style.transform = 'scaleX(0)';
+
+        if (worker) {
+            worker.postMessage({
+                centerX: centerX, centerY: centerY, zoom: zoom,
+                maxIter: maxIter, width: pw, height: ph,
+                dpr: dpr, W: W, H: H, palette: currentPalette
+            });
+            worker.onmessage = function (e) {
+                if (!active) return;
+                var buf = new Uint8ClampedArray(e.data.buffer);
+                var img = new ImageData(buf, pw, ph);
+                ctx.putImageData(img, 0, 0);
+                rendering = false;
+                hudPhase.textContent = 'COMPLETE';
+                hudFill.style.transform = 'scaleX(1)';
+                hudDetail.textContent = maxIter + ' max iterations';
+                updateCoordsHUD();
+            };
+        } else {
+            imageData = ctx.createImageData(pw, ph);
+            requestAnimationFrame(renderBatch);
+        }
     }
 
     function renderBatch() {
@@ -85,13 +119,18 @@ window.VizMandelbrot = (function () {
 
         var colorFn = palettes[currentPalette];
         var data = imageData.data;
-        var batchSize = Math.ceil(H * dpr / 20);
-        var endRow = Math.min(renderRow + batchSize, H * dpr);
+        var pw = W * dpr, ph = H * dpr;
+        var batchSize = Math.ceil(ph / 20);
+        var endRow = Math.min(renderRow + batchSize, ph);
+        var invDpr = 1 / dpr;
+        var halfW = W / 2, halfH = H / 2;
+        var invZoom = 1 / zoom;
 
         for (var py = renderRow; py < endRow; py++) {
-            for (var px = 0; px < W * dpr; px++) {
-                var x0 = centerX + (px / dpr - W / 2) / zoom;
-                var y0 = centerY + (py / dpr - H / 2) / zoom;
+            var y0base = centerY + (py * invDpr - halfH) * invZoom;
+            for (var px = 0; px < pw; px++) {
+                var x0 = centerX + (px * invDpr - halfW) * invZoom;
+                var y0 = y0base;
                 var x = 0, y = 0, iter = 0, xx = 0, yy = 0;
 
                 while (xx + yy <= 4 && iter < maxIter) {
@@ -101,12 +140,11 @@ window.VizMandelbrot = (function () {
                     iter++;
                 }
 
-                var idx = (py * W * dpr + px) * 4;
+                var idx = (py * pw + px) * 4;
                 if (iter === maxIter) {
                     data[idx] = 0; data[idx + 1] = 0; data[idx + 2] = 0;
                 } else {
-                    var log2 = Math.log(2);
-                    var nu = Math.log(Math.log(Math.sqrt(xx + yy)) / log2) / log2;
+                    var nu = Math.log(Math.log(Math.sqrt(xx + yy)) / LOG2) / LOG2;
                     var smoothIter = iter + 1 - nu;
                     var t = smoothIter / maxIter;
                     t = Math.max(0, Math.min(1, t));
@@ -119,19 +157,18 @@ window.VizMandelbrot = (function () {
         }
 
         renderRow = endRow;
-        var progress = renderRow / (H * dpr);
-        hudFill.style.width = (progress * 100).toFixed(1) + '%';
+        var progress = renderRow / ph;
+        hudFill.style.transform = 'scaleX(' + progress + ')';
         hudDetail.textContent = Math.round(progress * 100) + '% rendered';
 
-        if (renderRow >= H * dpr) {
+        if (renderRow >= ph) {
             ctx.putImageData(imageData, 0, 0);
             rendering = false;
             hudPhase.textContent = 'COMPLETE';
-            hudFill.style.width = '100%';
+            hudFill.style.transform = 'scaleX(1)';
             hudDetail.textContent = maxIter + ' max iterations';
             updateCoordsHUD();
         } else {
-            ctx.putImageData(imageData, 0, 0);
             requestAnimationFrame(renderBatch);
         }
     }

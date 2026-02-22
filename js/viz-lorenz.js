@@ -43,6 +43,8 @@ window.VizLorenz = (function () {
     var resumeTimer = null;
     var pauseStart = 0;
     var RESUME_DELAY = 5000;
+    var hudFrameCount = 0;
+    var HUD_UPDATE_INTERVAL = 6;
 
     // Inferno colorscale
     var inferno = [
@@ -108,10 +110,10 @@ window.VizLorenz = (function () {
 
     function updateHUD() {
         if (paused) {
-            hudPhase.textContent = 'PAUSED';
+            if (hudPhase.textContent !== 'PAUSED') hudPhase.textContent = 'PAUSED';
             hudPhase.classList.add('paused');
             if (manualPause) {
-                hudDetail.textContent = 'Paused';
+                if (hudDetail.textContent !== 'Paused') hudDetail.textContent = 'Paused';
             } else {
                 var elapsed = Date.now() - pauseStart;
                 var remaining = Math.max(0, Math.ceil((RESUME_DELAY - elapsed) / 1000));
@@ -121,19 +123,19 @@ window.VizLorenz = (function () {
         }
         hudPhase.classList.remove('paused');
         if (phase === 'draw') {
-            hudPhase.textContent = 'DRAWING';
+            if (hudPhase.textContent !== 'DRAWING') hudPhase.textContent = 'DRAWING';
             var count = Math.min(drawnPoints, STEPS);
             hudDetail.textContent = count.toLocaleString() + ' / ' + STEPS.toLocaleString() + ' points';
-            hudFill.style.width = ((count / STEPS) * 100).toFixed(1) + '%';
+            hudFill.style.transform = 'scaleX(' + (count / STEPS) + ')';
         } else if (phase === 'orbit') {
             var degrees = Math.round((frame / ORBIT_FRAMES) * 360);
-            hudPhase.textContent = 'ORBITING';
-            hudFill.style.width = ((frame / ORBIT_FRAMES) * 100).toFixed(1) + '%';
+            if (hudPhase.textContent !== 'ORBITING') hudPhase.textContent = 'ORBITING';
+            hudFill.style.transform = 'scaleX(' + (frame / ORBIT_FRAMES) + ')';
             hudDetail.textContent = degrees + '\u00B0 / 360\u00B0';
         } else {
-            hudPhase.textContent = 'COMPLETE';
-            hudFill.style.width = '100%';
-            hudDetail.textContent = 'Press reset to replay';
+            if (hudPhase.textContent !== 'COMPLETE') hudPhase.textContent = 'COMPLETE';
+            hudFill.style.transform = 'scaleX(1)';
+            if (hudDetail.textContent !== 'Press reset to replay') hudDetail.textContent = 'Press reset to replay';
         }
     }
 
@@ -200,21 +202,28 @@ window.VizLorenz = (function () {
 
     function tick() {
         if (!active) return;
-        updateHUD();
+
+        hudFrameCount++;
+        if (hudFrameCount >= HUD_UPDATE_INTERVAL) {
+            hudFrameCount = 0;
+            updateHUD();
+        }
 
         if (paused) { requestAnimationFrame(tick); return; }
 
         if (phase === 'draw') {
+            var prevDrawn = drawnPoints;
             var target = Math.min(STEPS, drawnPoints + DRAW_BATCH);
             drawnPoints = target;
             var tipIdx = drawnPoints - 1;
 
-            Plotly.restyle(plotDiv, {
-                x: [allX.slice(0, drawnPoints)],
-                y: [allY.slice(0, drawnPoints)],
-                z: [allZ.slice(0, drawnPoints)],
-                'line.color': [allC.slice(0, drawnPoints)]
-            }, 0);
+            // Append only the new batch of points instead of re-slicing the entire array
+            Plotly.extendTraces(plotDiv, {
+                x: [allX.slice(prevDrawn, drawnPoints)],
+                y: [allY.slice(prevDrawn, drawnPoints)],
+                z: [allZ.slice(prevDrawn, drawnPoints)],
+                'line.color': [allC.slice(prevDrawn, drawnPoints)]
+            }, [0]);
             Plotly.restyle(plotDiv, {
                 x: [[allX[tipIdx]]], y: [[allY[tipIdx]]], z: [[allZ[tipIdx]]],
                 'marker.opacity': [1]
@@ -369,6 +378,7 @@ window.VizLorenz = (function () {
 
     function pause() {
         active = false;
+        clearTimeout(resumeTimer);
     }
 
     function resume() {

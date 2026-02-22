@@ -45,6 +45,8 @@ window.VizMobius = (function () {
     var resumeTimer = null;
     var pauseStart = 0;
     var RESUME_DELAY = 5000;
+    var hudFrameCount = 0;
+    var HUD_UPDATE_INTERVAL = 6;
 
     // Captions
     var captions = [
@@ -94,10 +96,10 @@ window.VizMobius = (function () {
 
     function updateHUD() {
         if (paused) {
-            hudPhase.textContent = 'PAUSED';
+            if (hudPhase.textContent !== 'PAUSED') hudPhase.textContent = 'PAUSED';
             hudPhase.classList.add('paused');
             if (manualPause) {
-                hudDetail.textContent = 'Paused';
+                if (hudDetail.textContent !== 'Paused') hudDetail.textContent = 'Paused';
             } else {
                 var elapsed = Date.now() - pauseStart;
                 var remaining = Math.max(0, Math.ceil((RESUME_DELAY - elapsed) / 1000));
@@ -107,20 +109,20 @@ window.VizMobius = (function () {
         }
         hudPhase.classList.remove('paused');
         if (phase === 'draw') {
-            hudPhase.textContent = 'DRAWING';
+            if (hudPhase.textContent !== 'DRAWING') hudPhase.textContent = 'DRAWING';
             var sliceCount = Math.round((frame / DRAW_FRAMES) * U_STEPS);
             sliceCount = Math.min(sliceCount, U_STEPS);
             hudDetail.textContent = sliceCount + ' / ' + U_STEPS + ' slices';
-            hudFill.style.width = ((frame / DRAW_FRAMES) * 100).toFixed(1) + '%';
+            hudFill.style.transform = 'scaleX(' + (frame / DRAW_FRAMES) + ')';
         } else if (phase === 'orbit') {
             var degrees = Math.round((frame / ORBIT_FRAMES) * 360);
-            hudPhase.textContent = 'ORBITING';
-            hudFill.style.width = ((frame / ORBIT_FRAMES) * 100).toFixed(1) + '%';
+            if (hudPhase.textContent !== 'ORBITING') hudPhase.textContent = 'ORBITING';
+            hudFill.style.transform = 'scaleX(' + (frame / ORBIT_FRAMES) + ')';
             hudDetail.textContent = degrees + '\u00B0 / 360\u00B0';
         } else {
-            hudPhase.textContent = 'COMPLETE';
-            hudFill.style.width = '100%';
-            hudDetail.textContent = 'Adjust sliders or reset to replay';
+            if (hudPhase.textContent !== 'COMPLETE') hudPhase.textContent = 'COMPLETE';
+            hudFill.style.transform = 'scaleX(1)';
+            if (hudDetail.textContent !== 'Adjust sliders or reset to replay') hudDetail.textContent = 'Adjust sliders or reset to replay';
         }
     }
 
@@ -172,7 +174,12 @@ window.VizMobius = (function () {
 
     function tick() {
         if (!active) return;
-        updateHUD();
+
+        hudFrameCount++;
+        if (hudFrameCount >= HUD_UPDATE_INTERVAL) {
+            hudFrameCount = 0;
+            updateHUD();
+        }
 
         if (paused) { requestAnimationFrame(tick); return; }
 
@@ -336,6 +343,7 @@ window.VizMobius = (function () {
 
     function pause() {
         active = false;
+        clearTimeout(resumeTimer);
     }
 
     function resume() {

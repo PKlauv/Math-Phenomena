@@ -141,32 +141,32 @@ window.VizSierpinski = (function () {
 
     function updateHUD() {
         if (paused) {
-            hudPhase.textContent = 'PAUSED';
+            if (hudPhase.textContent !== 'PAUSED') hudPhase.textContent = 'PAUSED';
             hudPhase.classList.add('paused');
-            hudDetail.textContent = 'Paused';
+            if (hudDetail.textContent !== 'Paused') hudDetail.textContent = 'Paused';
             return;
         }
         hudPhase.classList.remove('paused');
         if (method === 'recursive') {
             if (animDone) {
-                hudPhase.textContent = 'COMPLETE';
-                hudFill.style.width = '100%';
+                if (hudPhase.textContent !== 'COMPLETE') hudPhase.textContent = 'COMPLETE';
+                hudFill.style.transform = 'scaleX(1)';
                 hudDetail.textContent = Math.pow(3, targetDepth).toLocaleString() + ' triangles at depth ' + targetDepth;
             } else {
-                hudPhase.textContent = 'BUILDING';
-                var progress = targetDepth > 0 ? (currentDepth / targetDepth) * 100 : 100;
-                hudFill.style.width = progress.toFixed(1) + '%';
+                if (hudPhase.textContent !== 'BUILDING') hudPhase.textContent = 'BUILDING';
+                var progress = targetDepth > 0 ? (currentDepth / targetDepth) : 1;
+                hudFill.style.transform = 'scaleX(' + progress + ')';
                 hudDetail.textContent = 'Depth ' + currentDepth + ' / ' + targetDepth;
             }
         } else {
             if (animDone) {
-                hudPhase.textContent = 'COMPLETE';
-                hudFill.style.width = '100%';
+                if (hudPhase.textContent !== 'COMPLETE') hudPhase.textContent = 'COMPLETE';
+                hudFill.style.transform = 'scaleX(1)';
                 hudDetail.textContent = CHAOS_TOTAL.toLocaleString() + ' points plotted';
             } else {
-                hudPhase.textContent = 'PLOTTING';
-                var progress = (chaosPoints.length / CHAOS_TOTAL) * 100;
-                hudFill.style.width = progress.toFixed(1) + '%';
+                if (hudPhase.textContent !== 'PLOTTING') hudPhase.textContent = 'PLOTTING';
+                var progress = chaosPoints.length / CHAOS_TOTAL;
+                hudFill.style.transform = 'scaleX(' + progress + ')';
                 hudDetail.textContent = chaosPoints.length.toLocaleString() + ' / ' + CHAOS_TOTAL.toLocaleString() + ' points';
             }
         }
@@ -372,18 +372,22 @@ window.VizSierpinski = (function () {
             if (this.value === 'recursive') { startRecursive(); } else { startChaos(); }
         });
 
+        var resizeTimer = null;
         window.addEventListener('resize', function () {
-            var newDpr = window.devicePixelRatio || 1;
-            if (newDpr !== dpr) {
-                setupCanvas();
-                if (method === 'recursive') {
-                    precompute(); clearCanvas(); drawBaseTriangle(); drawRemovedUpTo(currentDepth);
-                } else if (chaosBuffer) {
-                    ctx.setTransform(1, 0, 0, 1, 0, 0);
-                    ctx.drawImage(chaosBuffer, 0, 0);
-                    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function () {
+                var newDpr = window.devicePixelRatio || 1;
+                if (newDpr !== dpr) {
+                    setupCanvas();
+                    if (method === 'recursive') {
+                        precompute(); clearCanvas(); drawBaseTriangle(); drawRemovedUpTo(currentDepth);
+                    } else if (chaosBuffer) {
+                        ctx.setTransform(1, 0, 0, 1, 0, 0);
+                        ctx.drawImage(chaosBuffer, 0, 0);
+                        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                    }
                 }
-            }
+            }, 200);
         });
 
         startRecursive();
