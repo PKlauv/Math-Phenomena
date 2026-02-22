@@ -33,6 +33,9 @@ Interactive math visualizations that run in the browser. Covers chaos theory, to
 - **Pause/resume**: Leaving a tab pauses its animation; coming back resumes it
 - **Mobile support**: Responsive layout with a scrollable tab bar on small screens
 - **Educational write-ups**: Each page has equations (MathJax), parameter tables, and explanations written in plain language
+- **Dark/light theme**: toggle in the nav bar, remembers your preference, and respects system settings
+- **Keyboard shortcuts**: press `?` to see all shortcuts. Space to pause, R to reset, number keys to switch tabs
+- **Accessible**: ARIA roles, focus indicators, screen reader announcements, and full keyboard navigation
 
 ## :hammer_and_wrench: Built With
 
@@ -64,13 +67,15 @@ Interactive math visualizations that run in the browser. Covers chaos theory, to
   - Drawing primitives for Sierpinski triangles
   - DPR scaling so fractals look sharp on retina screens
 - **Force reflow trick** (`offsetHeight` read) to restart CSS transitions on tab switches
+- **Keyboard shortcut system** with a help modal, using `keydown` listeners and key mapping
+- **ARIA integration** for live regions, role attributes, and focus management to support screen readers
 
 </details>
 
 <details>
 <summary><strong>CSS</strong></summary>
 
-- **CSS custom properties** (`--bg`, `--text`, `--accent`) for consistent dark theming
+- **CSS custom properties** (`--bg`, `--text`, `--accent`) for consistent light/dark theming
 - **CSS Grid and Flexbox** for page layout, tab bars, and card grids
 - **`backdrop-filter: blur()`** for a glassmorphic look on panels and overlays
 - **Responsive design** with media queries to collapse the tab bar and stack content on mobile
@@ -117,6 +122,8 @@ js/viz-klein.js             - Klein bottle module
 js/viz-sierpinski.js        - Sierpinski triangle module
 js/viz-mandelbrot.js        - Mandelbrot set module
 js/mandelbrot-worker.js     - Web Worker for off-thread Mandelbrot rendering
+js/viz-shared.js            - shared constants, Plotly helpers, theme toggle, keyboard shortcuts
+js/mandelbrot-palettes.js   - color palettes shared between main thread and worker
 visualizations/*.html       - standalone pages (kept for backward compat)
 ```
 
