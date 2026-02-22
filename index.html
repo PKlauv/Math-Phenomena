@@ -209,8 +209,8 @@
         <button id="lorenz-btn-skip" title="Skip phase">&#x23ED;</button>
         <button id="lorenz-btn-reset" title="Reset">&#x21BA;</button>
     </div>
-    <div class="viz-caption" id="lorenz-caption"></div>
 </div>
+<div class="viz-caption" id="lorenz-caption"></div>
 
 <div class="container">
 
@@ -376,28 +376,28 @@
 
 <div class="plot-wrapper" id="mobius-plot-wrapper">
     <div class="viz-plot" id="mobius-plot"></div>
-    <div class="viz-hud hud-above-sliders" id="mobius-hud">
+    <div class="viz-hud" id="mobius-hud">
         <div class="viz-hud-phase" id="mobius-hud-phase"></div>
         <div class="viz-hud-progress"><div class="viz-hud-progress-fill" id="mobius-hud-progress-fill"></div></div>
         <div class="viz-hud-detail" id="mobius-hud-detail"></div>
     </div>
-    <div class="viz-controls controls-above-sliders" id="mobius-controls">
+    <div class="viz-controls" id="mobius-controls">
         <button id="mobius-btn-pause" title="Pause / Play">&#x23F8;</button>
         <button id="mobius-btn-skip" title="Skip phase">&#x23ED;</button>
         <button id="mobius-btn-reset" title="Reset">&#x21BA;</button>
     </div>
-    <div class="viz-sliders" id="mobius-sliders">
-        <div class="slider-group">
-            <label>Half-twists <span id="mobius-twist-val">1</span></label>
-            <input type="range" id="mobius-twist-slider" min="1" max="5" step="1" value="1">
-        </div>
-        <div class="slider-group">
-            <label>Width <span id="mobius-width-val">0.40</span></label>
-            <input type="range" id="mobius-width-slider" min="0.1" max="0.8" step="0.05" value="0.4">
-        </div>
-    </div>
-    <div class="viz-caption" id="mobius-caption"></div>
 </div>
+<div class="viz-sliders" id="mobius-sliders">
+    <div class="slider-group">
+        <label>Half-twists <span id="mobius-twist-val">1</span></label>
+        <input type="range" id="mobius-twist-slider" min="1" max="5" step="1" value="1">
+    </div>
+    <div class="slider-group">
+        <label>Width <span id="mobius-width-val">0.40</span></label>
+        <input type="range" id="mobius-width-slider" min="0.1" max="0.8" step="0.05" value="0.4">
+    </div>
+</div>
+<div class="viz-caption" id="mobius-caption"></div>
 
 <div class="container">
 
@@ -523,12 +523,12 @@
         <button id="klein-btn-pause" title="Pause / Play">&#x23F8;</button>
         <button id="klein-btn-reset" title="Reset camera">&#x21BA;</button>
     </div>
-    <div class="viz-caption" id="klein-caption"></div>
-    <div class="viz-sliders" id="klein-sliders">
-        <div class="slider-group">
-            <label>Opacity <span id="klein-opacity-val">1.00</span></label>
-            <input type="range" id="klein-opacity-slider" min="0.3" max="1.0" step="0.05" value="1.00">
-        </div>
+</div>
+<div class="viz-caption" id="klein-caption"></div>
+<div class="viz-sliders" id="klein-sliders">
+    <div class="slider-group">
+        <label>Opacity <span id="klein-opacity-val">1.00</span></label>
+        <input type="range" id="klein-opacity-slider" min="0.3" max="1.0" step="0.05" value="1.00">
     </div>
 </div>
 
@@ -744,33 +744,33 @@
 
 <div class="canvas-wrapper" id="mandelbrot-canvas-wrapper">
     <canvas class="viz-canvas crosshair" id="mandelbrot-canvas"></canvas>
-    <div class="viz-hud hud-above-caption" id="mandelbrot-hud">
+    <div class="viz-hud" id="mandelbrot-hud">
         <div class="viz-hud-phase" id="mandelbrot-hud-phase">RENDERING</div>
         <div class="viz-hud-progress"><div class="viz-hud-progress-fill" id="mandelbrot-hud-progress-fill"></div></div>
         <div class="viz-hud-detail" id="mandelbrot-hud-detail"></div>
         <div class="viz-hud-coords" id="mandelbrot-hud-coords"></div>
     </div>
-    <div class="viz-controls controls-above-caption" id="mandelbrot-controls">
+    <div class="viz-controls" id="mandelbrot-controls">
         <button id="mandelbrot-btn-zoom-out" title="Zoom out">&minus;</button>
         <button id="mandelbrot-btn-reset" title="Reset view">&#x21BA;</button>
     </div>
-    <div class="viz-sliders" id="mandelbrot-sliders">
-        <div class="slider-group">
-            <label>Iterations <span id="mandelbrot-iter-val">200</span></label>
-            <input type="range" id="mandelbrot-iter-slider" min="50" max="1000" step="50" value="200">
-        </div>
-        <div class="slider-group">
-            <label>Colors</label>
-            <select class="viz-select" id="mandelbrot-color-select">
-                <option value="inferno" selected>Inferno</option>
-                <option value="gold">Gold</option>
-                <option value="ocean">Ocean</option>
-                <option value="grayscale">Grayscale</option>
-            </select>
-        </div>
-    </div>
-    <div class="viz-caption" id="mandelbrot-caption">Click anywhere to zoom in</div>
 </div>
+<div class="viz-sliders" id="mandelbrot-sliders">
+    <div class="slider-group">
+        <label>Iterations <span id="mandelbrot-iter-val">200</span></label>
+        <input type="range" id="mandelbrot-iter-slider" min="50" max="1000" step="50" value="200">
+    </div>
+    <div class="slider-group">
+        <label>Colors</label>
+        <select class="viz-select" id="mandelbrot-color-select">
+            <option value="inferno" selected>Inferno</option>
+            <option value="gold">Gold</option>
+            <option value="ocean">Ocean</option>
+            <option value="grayscale">Grayscale</option>
+        </select>
+    </div>
+</div>
+<div class="viz-caption" id="mandelbrot-caption">Click anywhere to zoom in</div>
 
 <div class="container">
 
