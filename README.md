@@ -9,7 +9,7 @@
 
 Interactive math visualizations that run in the browser. Covers chaos theory, topology, and fractals, all on a single page with tab switching and no reloads.
 
-**[View Live](https://pklauv.github.io/Math-Visualizations/)**
+**[View Live](https://pklauv.github.io/Math-Phenomena/)**
 
 ---
 
