@@ -1,4 +1,4 @@
-# Math Visualizations
+# Mathematical Phenomena, Visualized
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
