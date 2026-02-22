@@ -45,6 +45,7 @@ js/viz-mobius.js           — Mobius strip module
 js/viz-klein.js            — Klein bottle module
 js/viz-sierpinski.js       — Sierpinski triangle module
 js/viz-mandelbrot.js       — Mandelbrot set module
+js/mandelbrot-worker.js    — Web Worker for off-thread Mandelbrot computation
 visualizations/*.html      — Standalone pages (kept for backward compatibility)
 ```
 
