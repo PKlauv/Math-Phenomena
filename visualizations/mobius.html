@@ -441,7 +441,7 @@
     Plotly.newPlot(plotDiv, [trace], layout, config);
 
     // --- Animation state ---
-    var DRAW_FRAMES  = 120;   // ~2 seconds at 60fps
+    var DRAW_FRAMES  = 60;    // ~1 second at 60fps
     var ORBIT_FRAMES = 200;
 
     var phase       = 'draw';   // 'draw', 'orbit', or 'done'
@@ -461,6 +461,12 @@
     var resumeTimer = null;
     var pauseStart  = 0;
     var RESUME_DELAY = 5000;
+
+    // Direct WebGL scene reference for fast camera updates (avoids Plotly.relayout)
+    var glSceneRef = null;
+
+    // Pre-computed surface frames for the DRAW phase
+    var drawFrameCache = [];
 
     // --- Control button references ---
     var btnPause = document.getElementById('btn-pause');
@@ -544,6 +550,33 @@
         };
     }
 
+    function setCamera(eye) {
+        if (!glSceneRef) {
+            var s = plotDiv._fullLayout && plotDiv._fullLayout.scene &&
+                    plotDiv._fullLayout.scene._scene;
+            if (s && s.setCamera) glSceneRef = s;
+        }
+        if (glSceneRef) {
+            glSceneRef.setCamera({
+                eye: eye,
+                center: { x: 0, y: 0, z: 0 },
+                up: { x: 0, y: 0, z: 1 }
+            });
+        } else {
+            Plotly.relayout(plotDiv, { 'scene.camera.eye': eye });
+        }
+    }
+
+    function precomputeDrawFrames() {
+        drawFrameCache = new Array(DRAW_FRAMES + 1);
+        for (var f = 0; f <= DRAW_FRAMES; f++) {
+            var progress = Math.min(f / DRAW_FRAMES, 1.0);
+            var uMax = progress * TWO_PI;
+            if (uMax < 0.01) uMax = 0.01;
+            drawFrameCache[f] = computeSurface(nTwists, halfWidth, uMax);
+        }
+    }
+
     // --- Transition helpers ---
     function transitionToOrbit() {
         phase = 'orbit';
@@ -574,17 +607,15 @@
         clearTimeout(resumeTimer);
         btnPause.textContent = '\u23F8';
 
-        // Reset surface to single cross-section
-        var initial = computeSurface(nTwists, halfWidth, 0.01);
+        precomputeDrawFrames();
+        var initial = drawFrameCache[0];
         Plotly.restyle(plotDiv, {
             x: [initial.x],
             y: [initial.y],
             z: [initial.z]
         }, 0);
 
-        Plotly.relayout(plotDiv, {
-            'scene.camera.eye': drawCameraEye(0, 0)
-        });
+        setCamera(drawCameraEye(0, 0));
     }
 
     // --- Main animation loop ---
@@ -596,40 +627,29 @@
         if (phase === 'draw') {
             frame++;
             var progress = Math.min(frame / DRAW_FRAMES, 1.0);
-            var uMax = progress * TWO_PI;
-            if (uMax < 0.01) uMax = 0.01;
 
-            var partial = computeSurface(nTwists, halfWidth, uMax);
+            // Update surface from pre-computed cache; skip alternate frames
+            if (frame % 2 === 0 || frame >= DRAW_FRAMES) {
+                var partial = drawFrameCache[Math.min(frame, DRAW_FRAMES)];
+                Plotly.restyle(plotDiv, {
+                    x: [partial.x],
+                    y: [partial.y],
+                    z: [partial.z]
+                }, 0);
+            }
 
-            Plotly.restyle(plotDiv, {
-                x: [partial.x],
-                y: [partial.y],
-                z: [partial.z]
-            }, 0);
-
-            orbitAngle += 0.004;
-            Plotly.relayout(plotDiv, {
-                'scene.camera.eye': drawCameraEye(orbitAngle, progress)
-            });
+            orbitAngle += 0.008;
+            setCamera(drawCameraEye(orbitAngle, progress));
 
             updateCaption(progress);
 
             if (frame >= DRAW_FRAMES) {
-                // Ensure full surface is rendered
-                var full = computeSurface(nTwists, halfWidth, TWO_PI);
-                Plotly.restyle(plotDiv, {
-                    x: [full.x],
-                    y: [full.y],
-                    z: [full.z]
-                }, 0);
                 transitionToOrbit();
             }
         } else if (phase === 'orbit') {
             frame++;
             orbitAngle += (2 * Math.PI) / ORBIT_FRAMES;
-            Plotly.relayout(plotDiv, {
-                'scene.camera.eye': orbitCameraEye(orbitAngle)
-            });
+            setCamera(orbitCameraEye(orbitAngle));
 
             if (frame >= ORBIT_FRAMES) {
                 transitionToDone();
@@ -738,7 +758,8 @@
     twistSlider.addEventListener('input', onSliderChange);
     widthSlider.addEventListener('input', onSliderChange);
 
-    // Start the animation
+    // Pre-compute all draw frames and start the animation
+    precomputeDrawFrames();
     requestAnimationFrame(tick);
 
 })();

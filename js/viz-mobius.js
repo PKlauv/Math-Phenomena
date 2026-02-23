@@ -30,7 +30,7 @@ window.VizMobius = (function () {
     var twistSlider, widthSlider, twistVal, widthVal;
 
     // Animation state
-    var DRAW_FRAMES = 120;
+    var DRAW_FRAMES = 60;
     var ORBIT_FRAMES = 200;
     var phase, frame, orbitAngle;
 
@@ -45,6 +45,12 @@ window.VizMobius = (function () {
     var resumeTimer = null;
     var pauseStart = 0;
     var hudFrameCount = 0;
+
+    // Direct WebGL scene reference for fast camera updates (avoids Plotly.relayout)
+    var glSceneRef = null;
+
+    // Pre-computed surface frames for the DRAW phase
+    var drawFrameCache = [];
 
     var captions = [
         { at: 0.00, text: 'Building the strip from the first cross-section...' },
@@ -134,6 +140,33 @@ window.VizMobius = (function () {
         };
     }
 
+    function setCamera(eye) {
+        if (!glSceneRef) {
+            var s = plotDiv._fullLayout && plotDiv._fullLayout.scene &&
+                    plotDiv._fullLayout.scene._scene;
+            if (s && s.setCamera) glSceneRef = s;
+        }
+        if (glSceneRef) {
+            glSceneRef.setCamera({
+                eye: eye,
+                center: { x: 0, y: 0, z: 0 },
+                up: { x: 0, y: 0, z: 1 }
+            });
+        } else {
+            Plotly.relayout(plotDiv, { 'scene.camera.eye': eye });
+        }
+    }
+
+    function precomputeDrawFrames() {
+        drawFrameCache = new Array(DRAW_FRAMES + 1);
+        for (var f = 0; f <= DRAW_FRAMES; f++) {
+            var progress = Math.min(f / DRAW_FRAMES, 1.0);
+            var uMax = progress * TWO_PI;
+            if (uMax < 0.01) uMax = 0.01;
+            drawFrameCache[f] = computeSurface(nTwists, halfWidth, uMax);
+        }
+    }
+
     function transitionToOrbit() {
         phase = 'orbit'; frame = 0;
         VizShared.fadeCaption(captionDiv, 'Drag to look around, or adjust sliders to explore');
@@ -151,9 +184,10 @@ window.VizMobius = (function () {
         btnPause.textContent = '\u23F8';
         btnPause.setAttribute('aria-label', 'Pause animation');
 
-        var initial = computeSurface(nTwists, halfWidth, 0.01);
+        precomputeDrawFrames();
+        var initial = drawFrameCache[0];
         Plotly.restyle(plotDiv, { x: [initial.x], y: [initial.y], z: [initial.z] }, 0);
-        Plotly.relayout(plotDiv, { 'scene.camera.eye': drawCameraEye(0, 0) });
+        setCamera(drawCameraEye(0, 0));
     }
 
     function tick() {
@@ -170,25 +204,24 @@ window.VizMobius = (function () {
         if (phase === 'draw') {
             frame++;
             var progress = Math.min(frame / DRAW_FRAMES, 1.0);
-            var uMax = progress * TWO_PI;
-            if (uMax < 0.01) uMax = 0.01;
 
-            var partial = computeSurface(nTwists, halfWidth, uMax);
-            Plotly.restyle(plotDiv, { x: [partial.x], y: [partial.y], z: [partial.z] }, 0);
+            // Update surface from pre-computed cache; skip alternate frames
+            if (frame % 2 === 0 || frame >= DRAW_FRAMES) {
+                var partial = drawFrameCache[Math.min(frame, DRAW_FRAMES)];
+                Plotly.restyle(plotDiv, { x: [partial.x], y: [partial.y], z: [partial.z] }, 0);
+            }
 
-            orbitAngle += 0.004;
-            Plotly.relayout(plotDiv, { 'scene.camera.eye': drawCameraEye(orbitAngle, progress) });
+            orbitAngle += 0.008;
+            setCamera(drawCameraEye(orbitAngle, progress));
             updateCaption(progress);
 
             if (frame >= DRAW_FRAMES) {
-                var full = computeSurface(nTwists, halfWidth, TWO_PI);
-                Plotly.restyle(plotDiv, { x: [full.x], y: [full.y], z: [full.z] }, 0);
                 transitionToOrbit();
             }
         } else if (phase === 'orbit') {
             frame++;
             orbitAngle += (2 * Math.PI) / ORBIT_FRAMES;
-            Plotly.relayout(plotDiv, { 'scene.camera.eye': orbitCameraEye(orbitAngle) });
+            setCamera(orbitCameraEye(orbitAngle));
             if (frame >= ORBIT_FRAMES) {
                 transitionToDone();
             }
@@ -280,6 +313,7 @@ window.VizMobius = (function () {
         VizShared.fixPlotlyScroll(plotDiv);
 
         phase = 'draw'; frame = 0; orbitAngle = 0;
+        precomputeDrawFrames();
 
         plotDiv.addEventListener('mousedown', interactionPause);
         plotDiv.addEventListener('touchstart', interactionPause);
@@ -300,6 +334,7 @@ window.VizMobius = (function () {
         // Theme change listener
         document.addEventListener('themechange', function () {
             if (initialized && plotDiv) {
+                glSceneRef = null;
                 VizShared.relayoutPlotlyTheme(plotDiv);
             }
         });
