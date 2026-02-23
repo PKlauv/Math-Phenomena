@@ -71,6 +71,9 @@ Interactive math visualizations that run in the browser. Covers chaos theory, to
 - **Force reflow trick** (`offsetHeight` read) to restart CSS transitions on tab switches
 - **Keyboard shortcut system** with a help modal, using `keydown` listeners and key mapping
 - **ARIA integration** for live regions, role attributes, and focus management to support screen readers
+- **Lazy-loading third-party scripts** by injecting `<script>` tags on demand, saving ~3.5 MB on initial load
+- **`IntersectionObserver`** to defer loading resources until they scroll into view
+- **Memory cleanup patterns**: freeing large arrays after they're consumed by a rendering library
 
 </details>
 
@@ -83,6 +86,8 @@ Interactive math visualizations that run in the browser. Covers chaos theory, to
 - **Responsive design** with media queries to collapse the tab bar and stack content on mobile
 - **Transitions and transforms** for hover effects, tab fade-ins, and card animations
 - **Vendor prefixes** (`-webkit-backdrop-filter`, `-moz-`) for cross-browser support
+- **`prefers-reduced-motion`** media query to disable animations for users who are sensitive to motion
+- **`will-change` and `contain`** properties as performance hints (learned that these are micro-optimizations with limited real-world impact at small scale)
 
 </details>
 
@@ -107,6 +112,9 @@ Interactive math visualizations that run in the browser. Covers chaos theory, to
 - **Supabase integration** for a feedback form (database inserts + anonymous auth, no server needed)
 - **MathJax** for rendering LaTeX equations inline with the educational write-ups
 - **Plotly.js** for interactive 3D surface and scatter plots with custom camera angles
+- **Playwright end-to-end testing** across desktop, tablet, and mobile viewports
+- **Performance tests that verify lazy-loading behavior**, checking that a library is absent until a specific user action triggers it
+- **Visual regression testing** with screenshot baselines
 
 </details>
 
@@ -148,6 +156,8 @@ At one point I renamed and refocused the entire repo around the Lorenz attractor
 Dark/light theming, keyboard shortcuts, and accessibility weren't added one feature at a time. They came together in a single large refactoring pass. Touching every module at once forced me to think about consistency across the whole app.
 
 Adding a Supabase feedback form was the first time I connected a third-party backend service. Anonymous auth, a database insert, and a simple form. No server of my own, just wiring up an API.
+
+The most recent commit bundled lazy-loading (Plotly + Supabase), a Playwright test suite, accessibility improvements, and visual polish. Lazy-loading Plotly (~3.5 MB) was the biggest win: users on the home page or canvas-based tabs never download it. The Playwright test suite (navigation, interactions, accessibility, performance, visual regression) was the most important infrastructure addition, giving the project real test coverage for the first time. `prefers-reduced-motion` support and a sticky mobile nav were practical improvements. Some changes (scroll-reveal animations, `will-change`/`contain` CSS hints, memory cleanup) were minor or cosmetic and didn't meaningfully change the user experience.
 
 > What started as a Python primer turned into a deep dive into browser graphics, math, and vanilla JS architecture.
 
