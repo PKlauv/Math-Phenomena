@@ -31,7 +31,7 @@ Interactive math visualizations that run in the browser. Covers chaos theory, to
 
 - **Single-page app**: Everything lives on one page with tab switching, no full page reloads
 - **Hash routing**: Links like `index.html#lorenz` go directly to a visualization, and back/forward work as expected
-- **Lazy loading**: Each visualization only initializes when you first open its tab
+- **Lazy loading**: Each visualization only initializes when you first open its tab, and Plotly.js (~3.5 MB) is loaded on demand so canvas-based tabs never download it
 - **Pause/resume**: Leaving a tab pauses its animation; coming back resumes it
 - **Mobile support**: Responsive layout with a scrollable tab bar on small screens
 - **Educational write-ups**: Each page has equations (MathJax), parameter tables, and explanations written in plain language
@@ -47,6 +47,7 @@ Interactive math visualizations that run in the browser. Covers chaos theory, to
 | Math Rendering | [MathJax](https://www.mathjax.org/) for LaTeX |
 | 2D Fractals | HTML5 Canvas (Sierpinski, Mandelbrot) |
 | Backend | [Supabase](https://supabase.com/) for feedback form |
+| Testing | [Playwright](https://playwright.dev/) for E2E tests |
 | Core | Vanilla HTML, CSS, and JS. No build tools or frameworks. |
 
 ---
@@ -135,6 +136,13 @@ js/mandelbrot-worker.js     - Web Worker for off-thread Mandelbrot rendering
 js/viz-shared.js            - shared constants, Plotly helpers, theme toggle, keyboard shortcuts
 js/mandelbrot-palettes.js   - color palettes shared between main thread and worker
 visualizations/*.html       - standalone pages (kept for backward compat)
+playwright.config.js        - E2E test configuration
+package.json                - npm scripts and dev dependencies
+tests/navigation.spec.js    - tab switching and hash routing tests
+tests/interactions.spec.js  - visualization controls and UI interaction tests
+tests/accessibility.spec.js - ARIA roles, focus management, keyboard nav tests
+tests/performance.spec.js   - lazy-loading and resource-timing tests
+tests/screenshots.spec.js   - visual regression screenshot tests
 ```
 
 ## :seedling: How This Project Evolved
