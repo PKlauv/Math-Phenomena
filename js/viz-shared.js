@@ -265,6 +265,8 @@ window.VizShared = (function () {
     onReady(function () {
         initThemeToggle();
         initKeyboardShortcuts();
+        var kbdBtn = document.getElementById('kbd-shortcut-btn');
+        if (kbdBtn) kbdBtn.addEventListener('click', toggleHelp);
     });
 
     return {

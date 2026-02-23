@@ -11,6 +11,8 @@ Interactive math visualizations that run in the browser. Covers chaos theory, to
 
 **[View Live](https://pklauv.github.io/Math-Phenomena/)**
 
+> **Tip:** Press <kbd>?</kbd> anywhere on the site to see all keyboard shortcuts, or click the keyboard button in the nav bar.
+
 ---
 
 ## :art: Visualizations
@@ -34,7 +36,7 @@ Interactive math visualizations that run in the browser. Covers chaos theory, to
 - **Mobile support**: Responsive layout with a scrollable tab bar on small screens
 - **Educational write-ups**: Each page has equations (MathJax), parameter tables, and explanations written in plain language
 - **Dark/light theme**: toggle in the nav bar, remembers your preference, and respects system settings
-- **Keyboard shortcuts**: press `?` to see all shortcuts. Space to pause, R to reset, number keys to switch tabs
+- **Keyboard shortcuts**: press `?` or click the ⌨ button in the nav bar to see all shortcuts. Space to pause, R to reset, number keys to switch tabs
 - **Accessible**: ARIA roles, focus indicators, screen reader announcements, and full keyboard navigation
 
 ## :hammer_and_wrench: Built With

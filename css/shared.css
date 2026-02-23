@@ -121,7 +121,8 @@ body {
 }
 
 /* Theme toggle button */
-.theme-toggle {
+.theme-toggle,
+.kbd-shortcut-btn {
     background: transparent;
     border: 1px solid var(--border);
     color: var(--text-dim);
@@ -136,7 +137,8 @@ body {
     transition: color 0.15s, border-color 0.15s;
     flex-shrink: 0;
 }
-.theme-toggle:hover {
+.theme-toggle:hover,
+.kbd-shortcut-btn:hover {
     color: var(--accent);
     border-color: var(--accent);
 }
