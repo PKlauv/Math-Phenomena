@@ -120,6 +120,31 @@
     color: var(--text-faint);
     font-size: 0.75rem;
 }
+.feedback-dropdown {
+    max-width: 420px;
+    margin: 0 auto 12px;
+}
+.feedback-dropdown summary {
+    cursor: pointer;
+    color: var(--accent);
+    font-size: 1.2rem;
+    font-family: var(--font-ui);
+    list-style: none;   
+    border-radius: 200px;
+    border: 1px solid #9a7b4f;
+    user-select: none;
+    
+}
+.feedback-dropdown summary:hover {
+    background: #9a7b4f;
+    color: var(--bg);
+    transition: background 0.2s, color 0.2s;
+
+}
+.feedback-dropdown summary::-webkit-details-marker { display: none; }
+.feedback-dropdown[open] .feedback-form {
+    margin-top: 12px;
+}
 .feedback-form {
     max-width: 420px;
     margin: 0 auto;
@@ -132,7 +157,7 @@
     margin-bottom: 6px;
 }
 .feedback-form input[type="text"],
-.feedback-form select,
+.feedback-form select, 
 .feedback-form textarea {
     width: 100%;
     box-sizing: border-box;
@@ -145,6 +170,9 @@
     padding: 8px 10px;
     margin-bottom: 12px;
     resize: vertical;
+}
+.feedback-form #feedback-category {
+    cursor: pointer;
 }
 .feedback-form input[type="text"]:focus-visible,
 .feedback-form select:focus-visible,
@@ -265,6 +293,8 @@
 </div>
 
 <div class="landing-footer">
+    <details class="feedback-dropdown">
+        <summary>Send feedback</summary>
     <form class="feedback-form" id="feedback-form">
         <label for="feedback-category">Category</label>
         <select id="feedback-category">
@@ -276,11 +306,11 @@
         <textarea id="feedback-message" placeholder="Suggestions, ideas, or anything else..." required></textarea>
         <label for="feedback-name">Name / GitHub (optional)</label>
         <input type="text" id="feedback-name" placeholder="@username or name" />
-        <button type="submit">Send feedback</button>
+        <button type="submit">Send</button>
         <div class="feedback-msg" id="feedback-msg"></div>
     </form>
-    <p class="credit">Made by Pk Lauvstad | Built with vanilla HTML, CSS, and JavaScript</p>
-    <p class="credit">Math and visualizations built with the assistance of AI</p>
+    </details>
+    <p class="credit">Made by Pk Lauvstad | Built with HTML, CSS, and JavaScript</p>
 </div>
 
 </div><!-- end panel-home -->
